@@ -1,0 +1,12 @@
+{
+  "name": "snapduo",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @snapduo/web dev",
+    "dev:signal": "pnpm --filter @snapduo/signal dev",
+    "build:web": "pnpm --filter @snapduo/web build",
+    "deploy:signal": "pnpm --filter @snapduo/signal deploy",
+    "typecheck": "pnpm -r --if-present typecheck"
+  }
+}

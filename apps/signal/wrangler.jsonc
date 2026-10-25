@@ -46,7 +46,7 @@
 	 */
 	"vars": {
 		// Comma-separated. Add your Vercel URL here before deploying.
-		"ALLOWED_ORIGINS": "http://localhost:3000"
+		"ALLOWED_ORIGINS": "http://localhost:3000,https://snapduo.vercel.app"
 	},
 	/**
 	 * Secrets (not in this file): TURN_KEY_ID, TURN_KEY_API_TOKEN

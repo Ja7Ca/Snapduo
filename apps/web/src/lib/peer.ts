@@ -8,6 +8,8 @@ export interface PeerOptions {
 	sendSignal: (data: SignalData) => void;
 	onRemoteStream: (stream: MediaStream) => void;
 	onStateChange: (state: RTCPeerConnectionState) => void;
+	/** Called for each local ICE candidate found (host / srflx / relay). */
+	onLocalCandidate?: (type: string) => void;
 	log: (line: string) => void;
 }
 
@@ -50,6 +52,7 @@ export class Peer {
 		};
 
 		this.pc.onicecandidate = ({ candidate }) => {
+			if (candidate?.type) opts.onLocalCandidate?.(candidate.type);
 			opts.sendSignal({ kind: "candidate", candidate: candidate ? candidate.toJSON() : null });
 		};
 

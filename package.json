@@ -7,6 +7,7 @@
     "dev:signal": "pnpm --filter @snapduo/signal dev",
     "build:web": "pnpm --filter @snapduo/web build",
     "deploy:signal": "pnpm --filter @snapduo/signal deploy",
-    "typecheck": "pnpm -r --if-present typecheck"
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test"
   }
 }

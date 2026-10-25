@@ -6,7 +6,23 @@ import {
 	type ServerMessage,
 } from "@snapduo/protocol";
 
-const SIGNAL_URL = process.env.NEXT_PUBLIC_SIGNAL_URL ?? "http://localhost:8787";
+// Trailing slashes would produce "//turn-credentials" (404).
+export const SIGNAL_URL = (process.env.NEXT_PUBLIC_SIGNAL_URL || "http://localhost:8787").replace(/\/+$/, "");
+
+/**
+ * NEXT_PUBLIC_* is baked in at build time. If it was missing, a deployed site
+ * silently calls localhost and fails with a vague "Load failed". Say so instead.
+ */
+export function signalConfigError(): string | null {
+	const local = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+	if (!process.env.NEXT_PUBLIC_SIGNAL_URL && !local) {
+		return "NEXT_PUBLIC_SIGNAL_URL is not set for this deployment. Add it in Vercel and redeploy.";
+	}
+	if (window.location.protocol === "https:" && SIGNAL_URL.startsWith("http:")) {
+		return `NEXT_PUBLIC_SIGNAL_URL must use https:// on a secure page (got ${SIGNAL_URL}).`;
+	}
+	return null;
+}
 
 export async function fetchIceServers(): Promise<IceServersResponse> {
 	const res = await fetch(`${SIGNAL_URL}/turn-credentials`, { cache: "no-store" });

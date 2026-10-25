@@ -3,7 +3,7 @@
 import { isPolite, type ServerMessage } from "@snapduo/protocol";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Peer, readStats, type ConnectionStats } from "@/lib/peer";
-import { fetchIceServers, SignalClient } from "@/lib/signal-client";
+import { fetchIceServers, SIGNAL_URL, SignalClient, signalConfigError } from "@/lib/signal-client";
 
 type Phase = "idle" | "starting" | "in-room" | "error";
 
@@ -50,6 +50,7 @@ export function Spike() {
 	const [phase, setPhase] = useState<Phase>("idle");
 	const [peerState, setPeerState] = useState<string>("—");
 	const [turnEnabled, setTurnEnabled] = useState<boolean | null>(null);
+	const [candidates, setCandidates] = useState<Record<string, number>>({});
 	const [stats, setStats] = useState<ConnectionStats | null>(null);
 	const [logs, setLogs] = useState<string[]>([]);
 
@@ -100,6 +101,7 @@ export function Spike() {
 					}
 				},
 				onStateChange: setPeerState,
+				onLocalCandidate: (type) => setCandidates((c) => ({ ...c, [type]: (c[type] ?? 0) + 1 })),
 				log,
 			});
 		},
@@ -149,6 +151,11 @@ export function Spike() {
 			localStream.current = await getMedia(log);
 			if (localVideo.current) localVideo.current.srcObject = localStream.current;
 			log(`media: ${localStream.current.getTracks().map((t) => t.kind).join(" + ")}`);
+
+			const configError = signalConfigError();
+			if (configError) throw new Error(configError);
+			log(`signal server: ${SIGNAL_URL}`);
+			setCandidates({});
 
 			const ice = await fetchIceServers();
 			iceServers.current = ice.iceServers;
@@ -240,6 +247,11 @@ export function Spike() {
 				<div>phase: {phase}</div>
 				<div>turn on server: {turnEnabled === null ? "—" : String(turnEnabled)}</div>
 				<div>force relay: {String(forceRelay)}</div>
+				<div className="break-all">signal: {SIGNAL_URL}</div>
+				<div>
+					local candidates: host {candidates.host ?? 0} · srflx {candidates.srflx ?? 0} · relay {candidates.relay ?? 0}
+					{forceRelay && phase === "in-room" && peerState !== "—" && !candidates.relay && " ⚠ no relay candidates: TURN unreachable"}
+				</div>
 				{stats ? (
 					<>
 						<div>

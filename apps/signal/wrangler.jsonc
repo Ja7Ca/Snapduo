@@ -26,7 +26,7 @@
 	"observability": {
 		"enabled": true
 	},
-	"upload_source_maps": true
+	"upload_source_maps": true,
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
@@ -44,7 +44,14 @@
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
+	"vars": {
+		// Comma-separated. Add your Vercel URL here before deploying.
+		"ALLOWED_ORIGINS": "http://localhost:3000"
+	},
+	/**
+	 * Secrets (not in this file): TURN_KEY_ID, TURN_KEY_API_TOKEN
+	 * Local: apps/signal/.dev.vars  ·  Production: `wrangler secret put <NAME>`
+	 */
 	/**
 	 * Static Assets
 	 * https://developers.cloudflare.com/workers/static-assets/binding/

@@ -1,31 +1,55 @@
-import { DurableObject } from "cloudflare:workers";
-import { PROTOCOL_VERSION } from "@snapduo/protocol";
+import { PROTOCOL_VERSION, ROOM_ID_PATTERN } from "@snapduo/protocol";
+import { getIceServers } from "./turn";
 
-/**
- * One RoomObject instance = one photobooth room.
- * Phase 0 will add WebSocket signaling here (Hibernation API).
- */
-export class RoomObject extends DurableObject<Env> {
-	async ping(): Promise<string> {
-		return `room alive (protocol v${PROTOCOL_VERSION})`;
-	}
+export { RoomObject } from "./room";
+
+/** Comma-separated list in wrangler vars, e.g. "http://localhost:3000,https://snapduo.vercel.app" */
+function allowedOrigins(env: Env): string[] {
+	return env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean);
+}
+
+function corsHeaders(origin: string | null, env: Env): HeadersInit {
+	if (!origin || !allowedOrigins(env).includes(origin)) return {};
+	return {
+		"Access-Control-Allow-Origin": origin,
+		"Access-Control-Allow-Methods": "GET, OPTIONS",
+		Vary: "Origin",
+	};
 }
 
 export default {
 	async fetch(request, env): Promise<Response> {
 		const url = new URL(request.url);
+		const origin = request.headers.get("Origin");
+		const cors = corsHeaders(origin, env);
+
+		if (request.method === "OPTIONS") {
+			return new Response(null, { status: 204, headers: cors });
+		}
 
 		if (url.pathname === "/health") {
-			return Response.json({ ok: true, protocol: PROTOCOL_VERSION });
+			return Response.json({ ok: true, protocol: PROTOCOL_VERSION }, { headers: cors });
 		}
 
-		// Temporary smoke test: GET /rooms/<id>/ping
-		const match = url.pathname.match(/^\/rooms\/([\w-]+)\/ping$/);
-		if (match) {
-			const stub = env.ROOM.getByName(match[1]);
-			return new Response(await stub.ping());
+		// Browsers always send Origin on WebSocket and cross-site fetches.
+		// Rejecting unknown origins stops other sites from using our TURN quota.
+		const originOk = origin !== null && allowedOrigins(env).includes(origin);
+
+		if (url.pathname === "/turn-credentials") {
+			if (!originOk) return new Response("Forbidden origin", { status: 403 });
+			return Response.json(await getIceServers(env), {
+				headers: { ...cors, "Cache-Control": "no-store" },
+			});
 		}
 
-		return new Response("Not found", { status: 404 });
+		const ws = url.pathname.match(/^\/rooms\/([^/]+)\/ws$/);
+		if (ws) {
+			if (!originOk) return new Response("Forbidden origin", { status: 403 });
+			const roomId = ws[1];
+			if (!ROOM_ID_PATTERN.test(roomId)) return new Response("Bad room id", { status: 400 });
+			return env.ROOM.getByName(roomId).fetch(request);
+		}
+
+		return new Response("Not found", { status: 404, headers: cors });
 	},
 } satisfies ExportedHandler<Env>;

@@ -34,7 +34,27 @@ Smoke checks:
 
 - http://localhost:3000 shows "Scaffold OK · protocol v1"
 - http://localhost:8787/health returns `{"ok":true,"protocol":1}`
-- http://localhost:8787/rooms/test/ping returns `room alive (protocol v1)`
+
+## Phase 0 — connection spike
+
+`/spike` is a deliberately ugly test page: two devices join the same room and should see and hear each other.
+
+1. TURN key (optional locally, required for the mobile test): copy `apps/signal/.dev.vars.example` to `apps/signal/.dev.vars` and fill in `TURN_KEY_ID` and `TURN_KEY_API_TOKEN` from Cloudflare Realtime → TURN.
+2. Run both apps, open http://localhost:3000/spike, press **join**, then open the copied link in a second tab.
+3. The debug panel shows the path in use: `host` (same network), `srflx` (direct over the internet) or `relay` (through TURN). Tick **force relay** before joining to prove TURN works.
+
+Testing on phones needs HTTPS, so use the deployed Vercel URL + deployed Worker:
+
+```bash
+# once
+pnpm --filter @snapduo/signal exec wrangler login
+pnpm --filter @snapduo/signal exec wrangler secret put TURN_KEY_ID
+pnpm --filter @snapduo/signal exec wrangler secret put TURN_KEY_API_TOKEN
+# add your Vercel URL to ALLOWED_ORIGINS in apps/signal/wrangler.jsonc, then
+pnpm deploy:signal
+```
+
+In Vercel, set `NEXT_PUBLIC_SIGNAL_URL` to the Worker URL (`https://snapduo-signal.<account>.workers.dev`) and redeploy.
 
 ## Scripts
 

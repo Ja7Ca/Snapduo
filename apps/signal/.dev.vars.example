@@ -1,0 +1,3 @@
+# Copy to .dev.vars (never commit .dev.vars)
+TURN_KEY_ID=
+TURN_KEY_API_TOKEN=

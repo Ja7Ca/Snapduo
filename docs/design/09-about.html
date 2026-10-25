@@ -1,0 +1,277 @@
+<!-- Snapduo About — Playful -->
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Snapduo — Landing (Mobile &amp; Desktop)</title>
+<!-- Google Fonts: Bricolage Grotesque, DM Sans, Space Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=DM+Sans:wght@400;500;600&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#FFFFFF',
+            surfaceAlt: '#F5F3F0',
+            borderCol: '#ECE8E3',
+            ink: '#1F1A17',
+            secondaryText: '#6B625A',
+            primaryOrange: '#FF6B2C',
+            primaryOrangeHover: '#E5571A',
+            videoTileBg: '#0E0C0A',
+            statusGood: '#12A594',
+          },
+          fontFamily: {
+            display: ['"Bricolage Grotesque"', 'sans-serif'],
+            body: ['"DM Sans"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
+          },
+          boxShadow: {
+            'brutal': '4px 4px 0px #1F1A17',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Reset & baseline */
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      background-color: #FFFFFF;
+      color: #1F1A17;
+      font-family: 'DM Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    /* Strictly single primary button with hard offset shadow */
+    .btn-primary-playful {
+      background-color: #FF6B2C;
+      color: #1F1A17;
+      border: 2px solid #1F1A17;
+      box-shadow: 4px 4px 0px #1F1A17;
+      transition: all 0.1s ease-in-out;
+    }
+    .btn-primary-playful:hover {
+      background-color: #E5571A;
+    }
+    .btn-primary-playful:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0px 0px 0px #1F1A17;
+    }
+    /* Playful cards & outlines: 2px #1F1A17 outline, NO SHADOW */
+    .playful-card {
+      border: 2px solid #1F1A17;
+      border-radius: 16px;
+      box-shadow: none !important;
+    }
+    .playful-pill {
+      border: 2px solid #1F1A17;
+      border-radius: 9999px;
+      box-shadow: none !important;
+    }
+    .sprocket {
+      width: 5px;
+      height: 7px;
+      background-color: #1F1A17;
+      border-radius: 1px;
+    }
+  </style>
+<meta content="web_standard" name="shell-type"/></head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-[#FF6B2C] selection:text-[#1F1A17]">
+<!-- TOP HEADER -->
+<header class="w-full max-w-7xl mx-auto px-5 lg:px-12 py-5 lg:py-6 flex items-center justify-between">
+<!-- Logo Left -->
+<a class="flex items-center gap-2 group" href="#">
+<div class="w-8 h-8 rounded-lg bg-[#FF6B2C] border-2 border-[#1F1A17] flex items-center justify-center p-1">
+<svg class="w-full h-full text-[#1F1A17]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24">
+<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+<circle cx="12" cy="13" r="3"></circle>
+</svg>
+</div>
+<span class="font-display font-extrabold text-2xl tracking-tight text-[#1F1A17]">Snapduo</span>
+</a>
+<!-- 'Join a room' text link right. Nothing else. -->
+<a class="font-body font-semibold text-[15px] text-[#1F1A17] hover:text-[#FF6B2C] underline underline-offset-4 decoration-2 transition-colors" href="#join">
+      Join a room
+    </a>
+</header>
+<!-- MAIN HERO SECTION -->
+<main class="w-full max-w-7xl mx-auto px-5 lg:px-12 py-6 lg:py-16 flex-1 flex flex-col justify-center"><div class="flex flex-col w-full">
+<div class="w-full max-w-5xl mx-auto flex flex-col gap-12 lg:gap-16">
+<!-- Top Action / Context Badge Bar -->
+<div class="flex items-center justify-between flex-wrap gap-4">
+<a class="inline-flex items-center gap-2 font-body-lg text-body-lg text-on-surface hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined text-lg transition-transform group-hover:-translate-x-1">arrow_back</span>
+<span>Back to photobooth</span>
+</a>
+<div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-low border-2 border-[#1F1A17]">
+<span class="w-2 h-2 rounded-full bg-[#12A594] animate-pulse"></span>
+<span class="font-label-mono-sm text-label-mono-sm uppercase tracking-wider text-on-surface">How it works</span>
+</div>
+</div>
+<!-- Editorial Header Section -->
+<div class="flex flex-col gap-5 max-w-3xl">
+<div class="flex items-center gap-3">
+<span class="font-label-mono text-label-mono text-secondary tracking-widest uppercase">// SNAPDUO PHILOSOPHY</span>
+<span class="w-12 h-0.5 bg-[#1F1A17]/20"></span>
+</div>
+<h1 class="font-display-lg text-display-lg text-on-surface tracking-tight">
+        How Snapduo works
+      </h1>
+<p class="font-body-lg text-body-lg text-secondary leading-relaxed max-w-2xl">
+        Snapduo is crafted for intimate, ephemeral photobooth moments between two friends anywhere across the globe. Simple, private, and nostalgic by design.
+      </p>
+</div>
+<!-- Feature Grid: 3 Playful Cards (2px solid ink outline, no shadows, 20px radius) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+<!-- Card 1: Direct Connection -->
+<div class="relative bg-surface-container-lowest border-2 border-[#1F1A17] rounded-[20px] p-6 lg:p-7 flex flex-col justify-between transition-transform duration-200 hover:-translate-y-1">
+<div class="flex flex-col gap-5">
+<div class="w-12 h-12 rounded-full bg-surface-container-low border-2 border-[#1F1A17] flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-2xl">sensors</span>
+</div>
+<div class="flex flex-col gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Direct connection</h2>
+<p class="font-body-md text-body-md text-secondary leading-relaxed">
+              Your video stream routes straight to your friend's screen without lingering on our servers.
+            </p>
+</div>
+</div>
+<div class="mt-8 pt-4 border-t-2 border-[#1F1A17]/10 flex flex-col gap-1">
+<span class="font-label-mono-sm text-label-mono-sm text-secondary uppercase tracking-wider">Under the hood</span>
+<p class="font-body-sm text-body-sm text-on-surface">Direct peer-to-peer piping keeps live calls strictly between the two of you.</p>
+</div>
+</div>
+<!-- Card 2: Native Sensor Quality -->
+<div class="relative bg-surface-container-lowest border-2 border-[#1F1A17] rounded-[20px] p-6 lg:p-7 flex flex-col justify-between transition-transform duration-200 hover:-translate-y-1">
+<div class="flex flex-col gap-5">
+<div class="w-12 h-12 rounded-full bg-surface-container-low border-2 border-[#1F1A17] flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-2xl">photo_camera</span>
+</div>
+<div class="flex flex-col gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Photos on your phone</h2>
+<p class="font-body-md text-body-md text-secondary leading-relaxed">
+              Each phone triggers its own camera hardware shutter, then pieces the tandem strip together.
+            </p>
+</div>
+</div>
+<div class="mt-8 pt-4 border-t-2 border-[#1F1A17]/10 flex flex-col gap-1">
+<span class="font-label-mono-sm text-label-mono-sm text-secondary uppercase tracking-wider">Crisp prints</span>
+<p class="font-body-sm text-body-sm text-on-surface">Full sensor clarity instead of fuzzy screen captures from video compression.</p>
+</div>
+</div>
+<!-- Card 3: 24h Expiry -->
+<div class="relative bg-surface-container-lowest border-2 border-[#1F1A17] rounded-[20px] p-6 lg:p-7 flex flex-col justify-between transition-transform duration-200 hover:-translate-y-1">
+<div class="flex flex-col gap-5">
+<div class="w-12 h-12 rounded-full bg-surface-container-low border-2 border-[#1F1A17] flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-2xl">hourglass_empty</span>
+</div>
+<div class="flex flex-col gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Gone in 24 hours</h2>
+<p class="font-body-md text-body-md text-secondary leading-relaxed">
+              Shared links and photo strips automatically vanish from the web after twenty-four hours.
+            </p>
+</div>
+</div>
+<div class="mt-8 pt-4 border-t-2 border-[#1F1A17]/10 flex flex-col gap-1">
+<span class="font-label-mono-sm text-label-mono-sm text-secondary uppercase tracking-wider">Zero footprint</span>
+<p class="font-body-sm text-body-sm text-on-surface">No profile databases, no persistent storage, and no tracking cookies.</p>
+</div>
+</div>
+</div>
+<!-- Visual Artifact Strip Preview -->
+<div class="w-full bg-surface-container-low border-2 border-[#1F1A17] rounded-[24px] p-6 lg:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
+<div class="flex flex-col gap-3 max-w-md">
+<div class="inline-flex items-center gap-2">
+<span class="font-label-mono text-label-mono text-secondary">STRIP-04 // MEMORY ARTIFACT</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">A timeless physical keepsake, digital first</h3>
+<p class="font-body-md text-body-md text-secondary">
+          Snap four dynamic frames in synchronized sequence. Print, save to your camera roll, or send the ephemeral strip to friends before it dissolves.
+        </p>
+</div>
+<!-- Mini Photostrip Mockup -->
+<div class="w-full md:w-auto flex items-center justify-center">
+<div class="bg-surface-container-lowest border-2 border-[#1F1A17] rounded-xl p-3 flex flex-col gap-2 max-w-[220px] w-full">
+<div class="flex items-center justify-between px-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#1F1A17]"></span>
+<span class="font-label-mono-sm text-label-mono-sm text-secondary">SNAPDUO</span>
+<span class="w-1.5 h-1.5 rounded-full bg-[#1F1A17]"></span>
+</div>
+<div class="w-full aspect-[4/3] rounded-lg overflow-hidden border-2 border-[#1F1A17] bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A stylized playful photobooth selfie of two smiling friends split horizontally in high natural daylight with film grain aesthetic and vivid colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDo68ZluccQ1mWhMuSwuU4gwg0tt7OndzEfO9LefRPZB7DIjQ2mw0vqs7gKcUwVLRng2cSxG2JvfRd3Qlct0MJb3G3IEHPg2M4o0MMsBgjQn40KZUkGy-lw_zoBuy4q4hqti9UyacyoB6-Y1lRLDe1eoroY_hFOktWHODC7qI2P2_nX-mtES5VHdWt-w7lzuPQNA7SskgUHCj50TtbdX37ImhVB3lLmbB_VEISVoRl7TYZCMhFHbEu54g"/>
+</div>
+<div class="w-full aspect-[4/3] rounded-lg overflow-hidden border-2 border-[#1F1A17] bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Two best friends laughing candidly, wearing vintage jackets, captured with authentic warm camera sensor lighting and nostalgic tint" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-2coa4vW85IWwZ5Lpt83hMPk5Lvn9q9rNmoActqaGFa_X3ZBSb6aCdeQI2gOMcHR419SwvTVGho3CXH_ZBdEVlykgBFq11ayIZEA8Mc7ycCV9iibRof64KYSDrNTLqsvIRgoK5xWdIRI3MVqCthkuari3IKlloYVp5Hzma7edvRNSpKqZSOFw8FeOJChHIvZ6G0DskUlOYElDOHJKylKuIMHtCo9pPfg5pQQhZ4REKV7PpNbq8FHuEg"/>
+</div>
+<div class="pt-1 text-center border-t border-[#ECE8E3]">
+<span class="font-label-mono-sm text-label-mono-sm text-secondary tracking-tighter">PARIS + TOKYO // 2025</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Developer Section -->
+<div class="w-full border-2 border-[#1F1A17] rounded-[24px] bg-surface-container-lowest p-6 sm:p-8 lg:p-10 flex flex-col gap-6">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-2">
+<span class="font-label-mono-sm text-label-mono-sm text-primary tracking-wide">// open source</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">For developers</h3>
+</div>
+<div class="inline-flex items-center px-3 py-1.5 rounded-full bg-surface-container-low border-2 border-[#1F1A17] w-fit">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface">MIT License</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-secondary max-w-2xl">
+        Built with WebRTC, Next.js and Cloudflare.
+      </p>
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
+<!-- Secondary Button: No drop shadow, 2px border -->
+<a class="h-[52px] px-6 rounded-full bg-surface-container-lowest border-2 border-[#1F1A17] text-on-surface font-body-lg text-body-lg flex items-center justify-center gap-2.5 hover:bg-surface-container-low transition-colors" href="https://github.com" rel="noopener noreferrer" target="_blank">
+<svg aria-hidden="true" class="w-5 h-5 fill-current" viewbox="0 0 24 24">
+<path clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" fill-rule="evenodd"></path>
+</svg>
+<span>View on GitHub</span>
+</a>
+<!-- Strictly Single Primary CTA Button with 4px 4px 0 #1F1A17 hard offset shadow -->
+<a class="btn-primary-playful h-[52px] px-8 rounded-full font-body-lg text-body-lg flex items-center justify-center gap-2" href="#">
+<span>Start a photobooth</span>
+<span class="material-symbols-outlined text-xl">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Assurance Pill / Micro Footer -->
+<div class="py-2 flex items-center justify-center">
+<div class="inline-flex items-center gap-2 text-center text-secondary font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-base text-[#12A594]">lock</span>
+<span>No sign up. Shared photos are deleted after 24 hours.</span>
+</div>
+</div>
+</div>
+</div></main>
+<!-- FOOTER -->
+<footer class="w-full border-t border-[#ECE8E3] bg-[#FFFFFF] py-6 px-5 lg:px-12 mt-10">
+<div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+<!-- "No sign up. Shared photos are deleted after 24 hours." -->
+<p class="font-body text-sm text-[#6B625A]">
+        No sign up. Shared photos are deleted after 24 hours.
+      </p>
+<!-- small "About" link -->
+<div class="flex items-center gap-6">
+<a class="font-body text-sm font-medium text-[#1F1A17] hover:text-[#FF6B2C] underline underline-offset-4 decoration-1 transition-colors" href="#about">
+          About
+        </a>
+</div>
+</div>
+</footer>
+</body></html>

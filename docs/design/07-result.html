@@ -1,0 +1,515 @@
+<!-- Snapduo Photo Strip Result — Playful -->
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Snapduo — Landing (Mobile &amp; Desktop)</title>
+<!-- Google Fonts: Bricolage Grotesque, DM Sans, Space Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=DM+Sans:wght@400;500;600&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#FFFFFF',
+            surfaceAlt: '#F5F3F0',
+            borderCol: '#ECE8E3',
+            ink: '#1F1A17',
+            secondaryText: '#6B625A',
+            primaryOrange: '#FF6B2C',
+            primaryOrangeHover: '#E5571A',
+            videoTileBg: '#0E0C0A',
+            statusGood: '#12A594',
+          },
+          fontFamily: {
+            display: ['"Bricolage Grotesque"', 'sans-serif'],
+            body: ['"DM Sans"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
+          },
+          boxShadow: {
+            'brutal': '4px 4px 0px #1F1A17',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Reset & baseline */
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      background-color: #FFFFFF;
+      color: #1F1A17;
+      font-family: 'DM Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    /* Strictly single primary button with hard offset shadow */
+    .btn-primary-playful {
+      background-color: #FF6B2C;
+      color: #1F1A17;
+      border: 2px solid #1F1A17;
+      box-shadow: 4px 4px 0px #1F1A17;
+      transition: all 0.1s ease-in-out;
+    }
+    .btn-primary-playful:hover {
+      background-color: #E5571A;
+    }
+    .btn-primary-playful:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0px 0px 0px #1F1A17;
+    }
+    /* Playful cards & outlines: 2px #1F1A17 outline, NO SHADOW */
+    .playful-card {
+      border: 2px solid #1F1A17;
+      border-radius: 16px;
+      box-shadow: none !important;
+    }
+    .playful-pill {
+      border: 2px solid #1F1A17;
+      border-radius: 9999px;
+      box-shadow: none !important;
+    }
+    .sprocket {
+      width: 5px;
+      height: 7px;
+      background-color: #1F1A17;
+      border-radius: 1px;
+    }
+  </style>
+<meta content="web_standard" name="shell-type"/></head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-[#FF6B2C] selection:text-[#1F1A17]">
+<!-- TOP HEADER -->
+<header class="w-full max-w-7xl mx-auto px-5 lg:px-12 py-5 lg:py-6 flex items-center justify-between">
+<!-- Logo Left -->
+<a class="flex items-center gap-2 group" href="#">
+<div class="w-8 h-8 rounded-lg bg-[#FF6B2C] border-2 border-[#1F1A17] flex items-center justify-center p-1">
+<svg class="w-full h-full text-[#1F1A17]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24">
+<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+<circle cx="12" cy="13" r="3"></circle>
+</svg>
+</div>
+<span class="font-display font-extrabold text-2xl tracking-tight text-[#1F1A17]">Snapduo</span>
+</a>
+<!-- 'Join a room' text link right. Nothing else. -->
+<a class="font-body font-semibold text-[15px] text-[#1F1A17] hover:text-[#FF6B2C] underline underline-offset-4 decoration-2 transition-colors" href="#join">
+      Join a room
+    </a>
+</header>
+<!-- MAIN HERO SECTION -->
+<main class="w-full max-w-7xl mx-auto px-5 lg:px-12 py-6 lg:py-16 flex-1 flex flex-col justify-center"><div class="flex flex-col w-full relative">
+<!-- Subtle decorative background warmth elements -->
+<div class="absolute -top-12 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#FF6B2C]/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+<div class="absolute bottom-10 right-8 w-72 h-72 bg-[#12A594]/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+<!-- Top Headline & Status Bar -->
+<div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 md:mb-12">
+<div>
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F5F3F0] border-2 border-[#1F1A17] mb-3">
+<span class="w-2.5 h-2.5 rounded-full bg-[#12A594] animate-pulse"></span>
+<span class="font-label-mono text-label-mono-sm text-[#1F1A17] font-bold uppercase tracking-wider">Session complete • Strip ready</span>
+</div>
+<h1 class="font-display-md text-display-md text-[#1F1A17] tracking-tight">
+        You took 3 snaps together!
+      </h1>
+<p class="font-body-md text-body-md text-[#6B625A] mt-1">
+        Looking great. Ready to save or share directly with each other.
+      </p>
+</div>
+<!-- Quick action back to booth -->
+<a class="inline-flex items-center gap-2 font-body-lg text-body-lg text-[#1F1A17] hover:text-[#FF6B2C] transition-colors py-2 px-4 rounded-full hover:bg-[#F5F3F0]" href="#retake">
+<span class="material-symbols-outlined text-[20px]">replay</span>
+<span>Take again</span>
+</a>
+</div>
+<!-- Main Grid: Photo Strip Showcase & Interaction Deck -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+<!-- LEFT: The Photobooth Physical Strip Artifact -->
+<div class="lg:col-span-6 xl:col-span-7 flex flex-col items-center justify-center p-2 sm:p-6">
+<!-- Strip Container with playful slight counter-clockwise rotation -->
+<div class="relative transition-transform duration-300 hover:rotate-0 hover:scale-[1.01] rotate-[-2deg] max-w-[340px] w-full bg-[#FFFFFF] border-2 border-[#1F1A17] rounded-2xl p-4 sm:p-5 flex flex-col shadow-none" id="photostrip">
+<!-- Left & Right Film Sprocket Perforation Columns -->
+<div class="absolute left-1.5 top-6 bottom-6 flex flex-col justify-between pointer-events-none">
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+</div>
+<div class="absolute right-1.5 top-6 bottom-6 flex flex-col justify-between pointer-events-none">
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+<span class="w-1.5 h-3 bg-[#1F1A17] rounded-[1px]"></span>
+</div>
+<!-- Inner Frames Area (mx-3 to clear sprockets) -->
+<div class="mx-2 flex flex-col gap-3">
+<!-- Frame 1: Big Smiles & High Five -->
+<div class="relative bg-[#F5F3F0] rounded-lg overflow-hidden border-2 border-[#1F1A17] aspect-[4/3] flex items-center justify-center group">
+<span class="absolute top-2 left-2.5 font-label-mono text-label-mono-sm text-[#1F1A17]/60">01</span>
+<!-- Graphic Illustration: Duo in Silhouette -->
+<svg class="w-full h-full p-3 text-[#1F1A17]" fill="none" viewbox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#F5F3F0" height="150" width="200"></rect>
+<!-- Warm background glow -->
+<circle cx="100" cy="75" fill="#FFDBCE" r="45"></circle>
+<!-- Person A Left -->
+<path d="M45 150 C45 110 60 98 80 98 C100 98 105 115 105 150 Z" fill="#1F1A17"></path>
+<circle cx="75" cy="72" fill="#1F1A17" r="20"></circle>
+<!-- Party hat prop on left person -->
+<polygon fill="#FF6B2C" points="68,52 82,52 75,30"></polygon>
+<circle cx="75" cy="28" fill="#1F1A17" r="3"></circle>
+<!-- Person B Right -->
+<path d="M95 150 C95 105 110 92 135 92 C155 92 165 110 165 150 Z" fill="#1F1A17"></path>
+<circle cx="135" cy="68" fill="#1F1A17" r="21"></circle>
+<!-- Heart sticker -->
+<path d="M102 52 C98 46 88 48 90 56 C92 64 102 72 102 72 C102 72 112 64 114 56 C116 48 106 46 102 52 Z" fill="#FF6B2C"></path>
+</svg>
+</div>
+<!-- Frame 2: Peace Sign & Quirky Glasses -->
+<div class="relative bg-[#F5F3F0] rounded-lg overflow-hidden border-2 border-[#1F1A17] aspect-[4/3] flex items-center justify-center">
+<span class="absolute top-2 left-2.5 font-label-mono text-label-mono-sm text-[#1F1A17]/60">02</span>
+<svg class="w-full h-full p-3 text-[#1F1A17]" fill="none" viewbox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#F5F3F0" height="150" width="200"></rect>
+<circle cx="100" cy="75" fill="#FFDF9C" r="48"></circle>
+<!-- Person A Left -->
+<path d="M40 150 C40 108 55 95 78 95 C98 95 102 112 102 150 Z" fill="#1F1A17"></path>
+<circle cx="72" cy="70" fill="#1F1A17" r="19"></circle>
+<!-- Quirky Star Glasses on Left Person -->
+<polygon fill="#FF6B2C" points="65,65 68,72 75,72 70,76 72,83 66,78 60,83 62,76 57,72 64,72"></polygon>
+<!-- Hand peace sign silhouette -->
+<path d="M30 115 L35 90 L42 90 L40 102 L48 92 L54 94 L46 112 Z" fill="#1F1A17"></path>
+<!-- Person B Right leaning in -->
+<path d="M92 150 C92 102 112 88 138 88 C160 88 170 108 170 150 Z" fill="#1F1A17"></path>
+<circle cx="130" cy="65" fill="#1F1A17" r="20"></circle>
+<!-- Big smile cheek curve -->
+<path d="M124 75 Q130 83 138 76" stroke="#FF6B2C" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+</div>
+<!-- Frame 3: Both Laughing & Wink -->
+<div class="relative bg-[#F5F3F0] rounded-lg overflow-hidden border-2 border-[#1F1A17] aspect-[4/3] flex items-center justify-center">
+<span class="absolute top-2 left-2.5 font-label-mono text-label-mono-sm text-[#1F1A17]/60">03</span>
+<svg class="w-full h-full p-3 text-[#1F1A17]" fill="none" viewbox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#F5F3F0" height="150" width="200"></rect>
+<circle cx="100" cy="75" fill="#CFEDE8" r="46"></circle>
+<!-- Person A Left laughing tilt -->
+<path d="M48 150 C48 112 65 96 86 96 C105 96 110 115 110 150 Z" fill="#1F1A17"></path>
+<circle cx="80" cy="74" fill="#1F1A17" r="20"></circle>
+<!-- Person B Right celebrating -->
+<path d="M88 150 C88 106 104 90 128 90 C150 90 162 108 162 150 Z" fill="#1F1A17"></path>
+<circle cx="124" cy="68" fill="#1F1A17" r="20"></circle>
+<!-- Little sparkle stars overhead -->
+<path d="M102 36 L104 42 L110 44 L104 46 L102 52 L100 46 L94 44 L100 42 Z" fill="#FF6B2C"></path>
+<path d="M150 45 L151 49 L155 50 L151 51 L150 55 L149 51 L145 50 L149 49 Z" fill="#12A594"></path>
+</svg>
+</div>
+</div>
+<!-- Photobooth Strip Tail: Vintage Stamped Metadata -->
+<div class="mx-2 mt-4 pt-3 border-t-2 border-dashed border-[#1F1A17]/30 flex flex-col items-center justify-center gap-1 text-center">
+<div class="font-display-md text-headline-sm font-extrabold tracking-wider text-[#1F1A17]">SNAPDUO</div>
+<div class="font-label-mono text-label-mono-sm text-[#1F1A17] font-semibold tracking-widest">
+            2025.04.18 // 19:42
+          </div>
+<div class="text-[11px] font-body-sm text-[#6B625A] uppercase tracking-wider">
+            Alex &amp; Sam • Strip #79402
+          </div>
+</div>
+</div>
+<p class="font-label-mono text-label-mono-sm text-[#6B625A] mt-4 flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">touch_app</span>
+        Click download below for full print-quality PNG
+      </p>
+</div>
+<!-- RIGHT: Controls, Share Link Card & Persistent Studio Voice/Video View -->
+<div class="lg:col-span-6 xl:col-span-5 flex flex-col gap-6">
+<!-- Action Button Group -->
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+<!-- Primary Action Button: Physical Arcade Press Style (ONLY element with brutal shadow) -->
+<button class="btn-primary-playful flex-1 h-[52px] rounded-full font-body-lg text-body-lg font-bold text-[#1F1A17] flex items-center justify-center gap-2" id="downloadBtn" onclick="triggerDownload()">
+<span class="material-symbols-outlined text-[22px]">download</span>
+<span>Download strip</span>
+</button>
+<!-- Secondary Action Button: Clean 2px ink outline -->
+<button class="playful-pill h-[52px] px-6 bg-[#FFFFFF] hover:bg-[#F5F3F0] transition-colors font-body-lg text-body-lg font-semibold text-[#1F1A17] flex items-center justify-center gap-2" id="openShareBtn" onclick="toggleShareSheet()">
+<span class="material-symbols-outlined text-[20px]">share</span>
+<span>Share link</span>
+</button>
+</div>
+<!-- Outlined Share Card ("After sharing" state) -->
+<div class="playful-card bg-[#F5F3F0] p-5 sm:p-6 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-[#12A594]"></span>
+<h3 class="font-display-md text-headline-sm text-[#1F1A17]">Shared link active</h3>
+</div>
+<span class="font-label-mono text-label-mono-sm font-medium px-2.5 py-1 rounded-full bg-[#FFFFFF] border-2 border-[#1F1A17] text-[#1F1A17]">
+            24h access
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-[#6B625A]">
+          Anyone with this private link can view or download the photostrip. No account needed.
+        </p>
+<!-- Link Copy Container -->
+<div class="bg-[#FFFFFF] border-2 border-[#1F1A17] rounded-xl p-2 pl-3.5 flex items-center justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-[18px] text-[#6B625A] flex-shrink-0">link</span>
+<span class="font-label-mono text-label-mono font-medium text-[#1F1A17] truncate" id="linkText">
+              snapduo.app/p/strip-79402
+            </span>
+</div>
+<button class="h-10 px-4 rounded-lg bg-[#F5F3F0] hover:bg-[#ECE8E3] border border-[#1F1A17] text-[#1F1A17] font-body-sm text-body-sm font-semibold transition-all flex items-center gap-1.5 flex-shrink-0" id="copyBtn" onclick="copyShareLink()">
+<span class="material-symbols-outlined text-[18px]" id="copyIcon">content_copy</span>
+<span id="copyLabel">Copy link</span>
+</button>
+</div>
+<!-- Expiration warning & Safe delete action -->
+<div class="flex items-center justify-between pt-2 border-t border-[#ECE8E3] text-sm">
+<div class="flex items-center gap-1.5 text-[#6B625A] font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span>Expires in 23h 58m</span>
+</div>
+<button class="font-body-sm text-body-sm text-[#ba1a1a] hover:text-[#93000a] font-semibold underline underline-offset-4 decoration-1 flex items-center gap-1" onclick="confirmDelete()">
+<span class="material-symbols-outlined text-[16px]">delete_forever</span>
+<span>Delete now</span>
+</button>
+</div>
+</div>
+<!-- Live Mini-Video Studio Tile: "Calm inside" mode -->
+<!-- Allows friends to remain in voice/video contact while reviewing results -->
+<div class="rounded-2xl bg-[#0E0C0A] p-4 border border-[#ECE8E3]/20 flex flex-col gap-3 shadow-none">
+<div class="flex items-center justify-between text-white/80">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#12A594] animate-pulse"></span>
+<span class="font-label-mono text-label-mono-sm text-white/90">Still talking to friend</span>
+</div>
+<span class="text-xs text-white/50 font-body-sm">Booth call active</span>
+</div>
+<div class="grid grid-cols-2 gap-3 items-center">
+<!-- You (Local Video Feed Preview) -->
+<div class="relative aspect-[4/3] rounded-xl bg-[#1b1c1a] overflow-hidden border border-white/10 flex items-center justify-center">
+<!-- Silhouette Graphic representing user -->
+<svg class="w-16 h-16 text-white/20" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
+</svg>
+<div class="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-[11px] font-body-sm text-white font-medium flex items-center gap-1">
+<span>You</span>
+</div>
+<div class="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#12A594]"></div>
+</div>
+<!-- Friend Sam (Remote Video Feed Preview) -->
+<div class="relative aspect-[4/3] rounded-xl bg-[#1b1c1a] overflow-hidden border border-white/10 flex items-center justify-center">
+<!-- Silhouette Graphic representing friend -->
+<svg class="w-16 h-16 text-[#FF6B2C]/40" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
+</svg>
+<div class="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-[11px] font-body-sm text-white font-medium flex items-center gap-1">
+<span>Sam</span>
+<!-- Audio indicator wave -->
+<span class="w-1.5 h-1.5 rounded-full bg-[#12A594] animate-ping ml-0.5"></span>
+</div>
+<span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-black/60 text-[10px] text-white/80 font-label-mono">Tokyo</span>
+</div>
+</div>
+<!-- Quick Call Controls -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2">
+<button class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors" id="micToggleBtn" onclick="toggleMic()" title="Toggle microphone">
+<span class="material-symbols-outlined text-[18px]" id="micIcon">mic</span>
+</button>
+<button class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors" id="camToggleBtn" onclick="toggleCam()" title="Toggle camera">
+<span class="material-symbols-outlined text-[18px]" id="camIcon">videocam</span>
+</button>
+</div>
+<a class="text-xs text-white/70 hover:text-white underline underline-offset-4 font-body-sm" href="#leave">
+            Leave booth
+          </a>
+</div>
+</div>
+<!-- Quick Tips Card -->
+<div class="p-4 rounded-xl bg-[#F5F3F0] flex items-start gap-3">
+<span class="material-symbols-outlined text-[#FF6B2C] text-[22px] flex-shrink-0 mt-0.5">auto_awesome</span>
+<div class="text-sm font-body-sm text-[#1F1A17]">
+<span class="font-semibold">Printing tip:</span> The downloaded file fits standard 2×6 photobooth paper. Ready for your fridge or journal!
+        </div>
+</div>
+</div>
+</div>
+<!-- Delete Confirmation Modal (Hidden by default) -->
+<div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" id="deleteModal">
+<div class="bg-[#FFFFFF] border-2 border-[#1F1A17] rounded-2xl max-w-sm w-full p-6 flex flex-col gap-4">
+<div class="w-12 h-12 rounded-full bg-[#ffdad6] text-[#ba1a1a] flex items-center justify-center">
+<span class="material-symbols-outlined text-[28px]">delete</span>
+</div>
+<div>
+<h4 class="font-display-md text-headline-sm text-[#1F1A17]">Delete this strip now?</h4>
+<p class="font-body-sm text-body-sm text-[#6B625A] mt-1">
+          This will immediately remove the photos and disable the link for both you and your friend. This cannot be undone.
+        </p>
+</div>
+<div class="flex items-center gap-3 mt-2">
+<button class="flex-1 h-11 rounded-full border-2 border-[#1F1A17] bg-[#FFFFFF] hover:bg-[#F5F3F0] text-[#1F1A17] font-body-md font-semibold text-sm" onclick="closeDeleteModal()">
+          Keep it
+        </button>
+<button class="flex-1 h-11 rounded-full bg-[#ba1a1a] hover:bg-[#93000a] text-white font-body-md font-semibold text-sm" onclick="proceedDelete()">
+          Yes, delete
+        </button>
+</div>
+</div>
+</div>
+<!-- Download Toast Notification -->
+<div class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1F1A17] text-white px-5 py-3 rounded-full border-2 border-[#FFFFFF] shadow-xl flex items-center gap-2 font-body-sm text-sm z-50 transition-all duration-300 opacity-0 pointer-events-none translate-y-4" id="toastNotification">
+<span class="material-symbols-outlined text-[#12A594] text-[20px]">check_circle</span>
+<span id="toastMessage">Photostrip saved to your downloads</span>
+</div>
+</div>
+<script>
+  // Copy Link micro-interaction
+  function copyShareLink() {
+    const linkText = document.getElementById('linkText').innerText.trim();
+    navigator.clipboard.writeText("https://" + linkText).then(() => {
+      const copyLabel = document.getElementById('copyLabel');
+      const copyIcon = document.getElementById('copyIcon');
+      
+      copyLabel.innerText = "Copied!";
+      copyIcon.innerText = "done";
+      
+      showToast("Link copied to clipboard!");
+
+      setTimeout(() => {
+        copyLabel.innerText = "Copy link";
+        copyIcon.innerText = "content_copy";
+      }, 2400);
+    }).catch(() => {
+      showToast("Link copied to clipboard!");
+    });
+  }
+
+  // Toast feedback
+  function showToast(message) {
+    const toast = document.getElementById('toastNotification');
+    const toastMsg = document.getElementById('toastMessage');
+    toastMsg.innerText = message;
+    
+    toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+    toast.classList.add('opacity-100', 'translate-y-0');
+
+    setTimeout(() => {
+      toast.classList.remove('opacity-100', 'translate-y-0');
+      toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+    }, 2800);
+  }
+
+  // Simulate Strip Download
+  function triggerDownload() {
+    const btn = document.getElementById('downloadBtn');
+    btn.innerHTML = '<span class="material-symbols-outlined text-[22px] animate-spin">refresh</span><span>Saving...</span>';
+    
+    setTimeout(() => {
+      btn.innerHTML = '<span class="material-symbols-outlined text-[22px]">check</span><span>Downloaded!</span>';
+      showToast("Photostrip (PNG) downloaded");
+      
+      setTimeout(() => {
+        btn.innerHTML = '<span class="material-symbols-outlined text-[22px]">download</span><span>Download strip</span>';
+      }, 2500);
+    }, 700);
+  }
+
+  // Secondary share trigger
+  function toggleShareSheet() {
+    copyShareLink();
+  }
+
+  // Delete modal flows
+  function confirmDelete() {
+    document.getElementById('deleteModal').classList.remove('hidden');
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+  }
+
+  function proceedDelete() {
+    closeDeleteModal();
+    showToast("Photostrip deleted permanently");
+    setTimeout(() => {
+      window.location.hash = "#booth";
+    }, 1200);
+  }
+
+  // Media toggle states
+  let isMuted = false;
+  function toggleMic() {
+    isMuted = !isMuted;
+    const icon = document.getElementById('micIcon');
+    const btn = document.getElementById('micToggleBtn');
+    if (isMuted) {
+      icon.innerText = "mic_off";
+      btn.classList.add('bg-[#ba1a1a]', 'text-white');
+      btn.classList.remove('bg-white/10');
+      showToast("Microphone muted");
+    } else {
+      icon.innerText = "mic";
+      btn.classList.remove('bg-[#ba1a1a]');
+      btn.classList.add('bg-white/10');
+      showToast("Microphone unmuted");
+    }
+  }
+
+  let isCamOff = false;
+  function toggleCam() {
+    isCamOff = !isCamOff;
+    const icon = document.getElementById('camIcon');
+    const btn = document.getElementById('camToggleBtn');
+    if (isCamOff) {
+      icon.innerText = "videocam_off";
+      btn.classList.add('bg-[#ba1a1a]', 'text-white');
+      btn.classList.remove('bg-white/10');
+      showToast("Camera turned off");
+    } else {
+      icon.innerText = "videocam";
+      btn.classList.remove('bg-[#ba1a1a]');
+      btn.classList.add('bg-white/10');
+      showToast("Camera turned on");
+    }
+  }
+</script></main>
+<!-- FOOTER -->
+<footer class="w-full border-t border-[#ECE8E3] bg-[#FFFFFF] py-6 px-5 lg:px-12 mt-10">
+<div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+<!-- "No sign up. Shared photos are deleted after 24 hours." -->
+<p class="font-body text-sm text-[#6B625A]">
+        No sign up. Shared photos are deleted after 24 hours.
+      </p>
+<!-- small "About" link -->
+<div class="flex items-center gap-6">
+<a class="font-body text-sm font-medium text-[#1F1A17] hover:text-[#FF6B2C] underline underline-offset-4 decoration-1 transition-colors" href="#about">
+          About
+        </a>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,483 @@
+<!-- Snapduo Waiting for a Friend (Calm) -->
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Snapduo — Check your camera and audio</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;700;800&amp;family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#FF6B2C',
+            'brand-hover': '#E5571A',
+            ink: '#1F1A17',
+            'ink-muted': '#6B625A',
+            surface: '#FFFFFF',
+            'surface-alt': '#F5F3F0',
+            borderline: '#ECE8E3',
+            'video-tile': '#0E0C0A',
+            'status-good': '#12A594',
+            'status-warn': '#E8A317',
+            'status-danger': '#D7263D',
+          },
+          fontFamily: {
+            display: ['"Bricolage Grotesque"', 'sans-serif'],
+            body: ['"DM Sans"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Sound meter bar animation */
+    @keyframes audioPulse {
+      0%, 100% { height: 6px; }
+      50% { height: 16px; }
+    }
+    .meter-bar-1 { animation: audioPulse 1.1s ease-in-out infinite; }
+    .meter-bar-2 { animation: audioPulse 0.8s ease-in-out infinite 0.2s; }
+    .meter-bar-3 { animation: audioPulse 1.3s ease-in-out infinite 0.4s; }
+    .meter-bar-4 { animation: audioPulse 0.9s ease-in-out infinite 0.1s; }
+
+    /* Mirrored camera view */
+    .mirrored-preview {
+      transform: scaleX(-1);
+    }
+  </style>
+<meta content="web_standard" name="shell-type"/></head>
+<body class="bg-surface text-ink font-body antialiased min-h-screen flex flex-col justify-between selection:bg-brand selection:text-ink">
+<!-- Top Minimal Calm Header -->
+<header class="w-full border-b border-borderline py-4 px-5 sm:px-8">
+<div class="max-w-4xl mx-auto flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<!-- Snapduo Calm Logo Mark -->
+<svg class="w-6 h-6 text-brand" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+<circle cx="12" cy="13" r="3"></circle>
+</svg>
+<span class="font-display font-bold text-lg tracking-tight text-ink">Snapduo</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-alt text-xs font-mono text-ink-muted">
+<span class="w-2 h-2 rounded-full bg-status-good"></span>
+          Room #412
+        </span>
+</div>
+</div>
+</header>
+<!-- Main Content Container -->
+<main class="w-full flex-1 max-w-4xl mx-auto px-5 py-6 sm:py-8 flex flex-col justify-center"><div class="flex flex-col w-full">
+<div class="flex flex-col gap-6 md:gap-8 items-center max-w-4xl mx-auto w-full">
+<!-- Status Banner / Micro Guidance -->
+<div class="w-full flex flex-col sm:flex-row items-center justify-between gap-3 px-1">
+<div class="flex items-center gap-3">
+<span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-low text-secondary text-body-sm">
+<span class="w-2 h-2 rounded-full bg-status-good animate-pulse"></span>
+          You are live in booth
+        </span>
+<span class="hidden sm:inline-block text-secondary text-body-sm font-body-sm">· 2-person private room</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-secondary text-body-sm font-body-sm">Need someone to join?</span>
+<button class="text-primary-container font-body-sm text-body-sm hover:underline" onclick="document.getElementById('invite-section').scrollIntoView({behavior: 'smooth'})">
+          Share room link
+        </button>
+</div>
+</div>
+<!-- Main Dual Booth Viewport -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full">
+<!-- Host Video Tile (Calm Studio Viewport) -->
+<div class="relative w-full aspect-[4/5] sm:aspect-[3/4] bg-video-tile rounded-[20px] overflow-hidden flex flex-col justify-between p-4 sm:p-5 select-none shadow-sm">
+<!-- Live Camera Backdrop / Minimal Silhouette -->
+<div class="absolute inset-0 flex items-center justify-center opacity-85">
+<!-- Ambient Studio Silhouette SVG -->
+<svg class="w-36 h-36 sm:w-44 sm:h-44 text-surface-variant opacity-25" fill="currentColor" viewbox="0 0 160 160">
+<path d="M80 82C97.6731 82 112 67.6731 112 50C112 32.3269 97.6731 18 80 18C62.3269 18 48 32.3269 48 50C48 67.6731 62.3269 82 80 82ZM80 98C54.4 98 28 110.8 28 136V142H132V136C132 110.8 105.6 98 80 98Z"></path>
+</svg>
+<div class="absolute inset-0 bg-gradient-to-t from-video-tile via-transparent to-video-tile/40"></div>
+</div>
+<!-- Tile Top HUD -->
+<div class="relative z-10 flex items-center justify-between w-full">
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-video-tile/70 backdrop-blur-md text-surface text-label-mono-sm font-label-mono-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-status-good animate-ping"></span>
+            Camera on
+          </div>
+<button class="w-8 h-8 rounded-full bg-video-tile/60 backdrop-blur-md text-surface flex items-center justify-center hover:bg-video-tile/90 transition-colors" onclick="flipCameraPreview()" title="Flip your camera view">
+<span class="material-symbols-outlined text-[18px]">flip_camera_ios</span>
+</button>
+</div>
+<!-- Audio Speaking Glow Line (Active visual state) -->
+<div class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-status-good to-transparent opacity-80" id="speaking-meter-glow"></div>
+<!-- Tile Bottom HUD -->
+<div class="relative z-10 flex items-center justify-between w-full">
+<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-video-tile/80 backdrop-blur-md text-surface">
+<span class="w-2 h-2 rounded-full bg-status-good"></span>
+<span class="font-body-sm text-body-sm font-medium">You (Host)</span>
+</div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-video-tile/80 backdrop-blur-md text-surface/90 text-label-mono-sm font-label-mono-sm">
+<span class="material-symbols-outlined text-[15px] text-status-good">mic</span>
+<span>Mic on</span>
+</div>
+</div>
+</div>
+<!-- Friend Waiting Tile (Calm Waiting Deck) -->
+<div class="relative w-full aspect-[4/5] sm:aspect-[3/4] bg-surface-container-low rounded-[20px] overflow-hidden flex flex-col items-center justify-center p-6 text-center shadow-sm">
+<!-- Subtle pulsing waiting orb / silhouette -->
+<div class="relative mb-5 flex items-center justify-center">
+<div class="w-20 h-20 rounded-full bg-secondary-container animate-ping opacity-25"></div>
+<div class="absolute w-20 h-20 rounded-full bg-surface-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[36px] text-secondary">person_add</span>
+</div>
+</div>
+<div class="max-w-xs space-y-2">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface text-secondary text-label-mono-sm font-label-mono-sm mb-1">
+<span class="w-2 h-2 rounded-full bg-status-warn animate-pulse"></span>
+            Seat open
+          </div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">
+            Waiting for your friend…
+          </h2>
+<p class="font-body-sm text-body-sm text-secondary">
+            The photobooth will unlock as soon as they join this link.
+          </p>
+</div>
+<div class="absolute bottom-4 inset-x-4 flex items-center justify-center">
+<span class="text-label-mono-sm font-label-mono-sm text-secondary">
+            Ready for twin snaps
+          </span>
+</div>
+</div>
+</div>
+<!-- Calm Invite Panel (Card) -->
+<div class="w-full bg-surface-container-lowest rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col gap-5" id="invite-section">
+<!-- Card Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Invite your friend</h3>
+<p class="font-body-sm text-body-sm text-secondary">Send this link to someone you want to take pictures with.</p>
+</div>
+<div class="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-label-mono-sm font-label-mono-sm text-secondary">
+<span class="w-1.5 h-1.5 rounded-full bg-status-good"></span>
+          Room #412
+        </div>
+</div>
+<!-- Main Action Zone: Link & Share -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch">
+<!-- Room Link Bar with Copy Trigger -->
+<div class="md:col-span-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-surface-container-low p-2 rounded-xl">
+<div class="flex-1 px-3 py-2 text-on-surface font-label-mono text-label-mono truncate select-all">
+            snapduo.app/r/412
+          </div>
+<button class="h-11 px-5 rounded-full bg-surface text-on-surface font-body-sm text-body-sm font-medium hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2 shadow-sm" id="copy-btn" onclick="copyRoomLink()">
+<span class="material-symbols-outlined text-[18px]" id="copy-icon">content_copy</span>
+<span id="copy-text">Copy link</span>
+</button>
+</div>
+<!-- Primary Action: Share link (Clean pill, no hard shadow) -->
+<button class="md:col-span-4 h-13 min-h-[52px] px-6 rounded-full bg-primary-container text-ink font-body-lg text-body-lg font-medium hover:bg-brand-hover transition-colors flex items-center justify-center gap-2.5" onclick="shareInviteLink()">
+<span>Share link</span>
+<span class="material-symbols-outlined text-[20px]">send</span>
+</button>
+</div>
+<!-- Secondary Info row: QR and Privacy Trust note -->
+<div class="pt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<!-- Crisp Inline QR Code SVG -->
+<div class="w-12 h-12 bg-surface-container-low rounded-lg p-1.5 flex items-center justify-center shrink-0">
+<svg class="w-full h-full text-on-surface" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<rect height="6" rx="1" width="6" x="3" y="3"></rect>
+<rect height="6" rx="1" width="6" x="15" y="3"></rect>
+<rect height="6" rx="1" width="6" x="3" y="15"></rect>
+<path d="M15 15h2v2h-2z"></path>
+<path d="M19 19h2v2h-2z"></path>
+<path d="M19 15h2"></path>
+<path d="M15 19v2"></path>
+<path d="M11 5h1"></path>
+<path d="M11 9h1"></path>
+<path d="M11 13h1"></path>
+<path d="M11 19h1"></path>
+</svg>
+</div>
+<div>
+<p class="font-body-sm text-body-sm font-medium text-on-surface">Scan with phone</p>
+<p class="font-label-mono-sm text-label-mono-sm text-secondary">Up to 2 people per room</p>
+</div>
+</div>
+<div class="flex items-center gap-2 text-secondary text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-[18px] text-status-good shrink-0">verified_user</span>
+<span>No sign up required. Photos stay private and expire in 24 hours.</span>
+</div>
+</div>
+</div>
+<!-- Bottom Controls Dock (52px Neutral Pill Buttons) -->
+<div class="flex items-center justify-center gap-3 py-2 w-full">
+<!-- Mic Toggle -->
+<button class="h-13 w-13 min-h-[52px] min-w-[52px] rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center justify-center transition-colors shadow-sm" id="dock-mic-btn" onclick="toggleLocalMic()" title="Mute or unmute microphone">
+<span class="material-symbols-outlined text-[22px]" id="dock-mic-icon">mic</span>
+</button>
+<!-- Camera Flip -->
+<button class="h-13 w-13 min-h-[52px] min-w-[52px] rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center justify-center transition-colors shadow-sm" onclick="flipCameraPreview()" title="Flip camera">
+<span class="material-symbols-outlined text-[22px]">flip_camera_ios</span>
+</button>
+<!-- Sound Meter Visual Pip -->
+<div class="hidden sm:flex items-center gap-1 px-4 h-13 min-h-[52px] rounded-full bg-surface-container-low text-secondary text-body-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-status-good"></span>
+<span class="text-label-mono-sm font-label-mono-sm" id="dock-status-label">Audio active</span>
+</div>
+<!-- Leave Booth Trigger -->
+<button class="h-13 px-5 min-h-[52px] rounded-full bg-surface-container-low hover:bg-error-container hover:text-on-error-container text-secondary flex items-center gap-2 transition-colors shadow-sm" onclick="confirmLeaveRoom()" title="Leave room">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+<span class="font-body-sm text-body-sm font-medium">Leave room</span>
+</button>
+</div>
+</div>
+<script>
+    let localMicActive = true;
+
+    function copyRoomLink() {
+      const url = 'snapduo.app/r/412';
+      navigator.clipboard.writeText('https://' + url).catch(() => {});
+      
+      const textElem = document.getElementById('copy-text');
+      const iconElem = document.getElementById('copy-icon');
+      
+      textElem.textContent = 'Copied!';
+      iconElem.textContent = 'check';
+      iconElem.classList.add('text-status-good');
+
+      setTimeout(() => {
+        textElem.textContent = 'Copy link';
+        iconElem.textContent = 'content_copy';
+        iconElem.classList.remove('text-status-good');
+      }, 2400);
+    }
+
+    function shareInviteLink() {
+      const shareData = {
+        title: 'Join me in Snapduo',
+        text: 'Hop into photobooth Room #412 with me to snap photos together!',
+        url: 'https://snapduo.app/r/412'
+      };
+      if (navigator.share) {
+        navigator.share(shareData).catch(() => {});
+      } else {
+        copyRoomLink();
+      }
+    }
+
+    function toggleLocalMic() {
+      localMicActive = !localMicActive;
+      const dockIcon = document.getElementById('dock-mic-icon');
+      const dockLabel = document.getElementById('dock-status-label');
+      const glow = document.getElementById('speaking-meter-glow');
+
+      if (localMicActive) {
+        dockIcon.textContent = 'mic';
+        dockIcon.classList.remove('text-error');
+        if (dockLabel) dockLabel.textContent = 'Audio active';
+        if (glow) glow.classList.remove('opacity-0');
+      } else {
+        dockIcon.textContent = 'mic_off';
+        dockIcon.classList.add('text-error');
+        if (dockLabel) dockLabel.textContent = 'Muted';
+        if (glow) glow.classList.add('opacity-0');
+      }
+    }
+
+    function confirmLeaveRoom() {
+      if (confirm('Leave photobooth room #412? You can rejoin anytime with your link.')) {
+        window.location.reload();
+      }
+    }
+  </script>
+</div></main>
+<!-- Calm Minimal Footer -->
+<footer class="w-full border-t border-borderline py-4 px-5 text-center text-xs text-ink-muted">
+<div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+<p>No sign up. Shared photos are deleted after 24 hours.</p>
+<div class="flex items-center gap-4 text-xs font-mono">
+<span>snapduo.app/r/412</span>
+</div>
+</div>
+</footer>
+<!-- Script for state transitions & interactivity -->
+<script>
+    let currentScenario = 'ready';
+    let isMicMuted = false;
+
+    const stateConfig = {
+      'ready': {
+        name: 'Ready to enter',
+        heading: 'Check your camera and audio',
+        subheading: 'Take a moment to see how you look before joining your friend.',
+        summaryHtml: `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-status-good"></span>
+            <p class="text-xs font-medium text-ink">Ready when you are</p>
+          </div>
+          <p class="text-xs text-ink-muted">Your friend is waiting in the booth.</p>
+        `,
+        btnText: 'Enter booth',
+        videoLayerId: 'video-content-ready'
+      },
+      'permission': {
+        name: '1. Permission needed',
+        heading: 'Camera access needed',
+        subheading: 'We need your camera to take photos. Mic is optional.',
+        summaryHtml: `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-brand"></span>
+            <p class="text-xs font-medium text-ink">Permission required</p>
+          </div>
+          <p class="text-xs text-ink-muted">Tap below to allow camera & mic prompt.</p>
+        `,
+        btnText: 'Allow camera & mic',
+        videoLayerId: 'video-content-permission'
+      },
+      'camera-blocked': {
+        name: '2. Camera blocked',
+        heading: 'Camera is blocked',
+        subheading: 'Camera permission was denied in your browser settings.',
+        summaryHtml: `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-status-danger"></span>
+            <p class="text-xs font-medium text-ink">Camera blocked</p>
+          </div>
+          <p class="text-xs text-ink-muted">Enable access in browser settings, then tap try again.</p>
+        `,
+        btnText: 'Try again',
+        videoLayerId: 'video-content-camera-blocked'
+      },
+      'mic-blocked': {
+        name: '3. Mic blocked only',
+        heading: 'Microphone is blocked',
+        subheading: 'You can still join and hear your friend.',
+        summaryHtml: `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-status-warn"></span>
+            <p class="text-xs font-medium text-ink">Mic unavailable</p>
+          </div>
+          <p class="text-xs text-ink-muted">You can still enter and hear your friend fine.</p>
+        `,
+        btnText: 'Continue without mic',
+        videoLayerId: 'video-content-mic-blocked'
+      },
+      'camera-busy': {
+        name: '4. Camera busy',
+        heading: 'Camera is in use',
+        subheading: 'Your camera is being used by another app.',
+        summaryHtml: `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-status-warn"></span>
+            <p class="text-xs font-medium text-ink">Camera in use</p>
+          </div>
+          <p class="text-xs text-ink-muted">Close other video apps, then tap try again.</p>
+        `,
+        btnText: 'Try again',
+        videoLayerId: 'video-content-camera-busy'
+      }
+    };
+
+    function switchState(stateKey) {
+      currentScenario = stateKey;
+      const config = stateConfig[stateKey];
+
+      // Update indicator and tabs
+      document.getElementById('current-state-indicator').textContent = config.name;
+      document.querySelectorAll('.state-tab').forEach(tab => {
+        tab.className = 'state-tab px-3 py-1.5 rounded-full font-medium transition-all bg-white hover:bg-neutral-100 text-ink border border-borderline';
+      });
+      const activeTab = document.getElementById('btn-state-' + stateKey);
+      if (activeTab) {
+        activeTab.className = 'state-tab px-3 py-1.5 rounded-full font-medium transition-all bg-ink text-white';
+      }
+
+      // Update texts
+      document.getElementById('screen-heading').textContent = config.heading;
+      document.getElementById('screen-subheading').textContent = config.subheading;
+      document.getElementById('action-summary-container').innerHTML = config.summaryHtml;
+      
+      // Update primary button text
+      const btn = document.getElementById('primary-action-btn');
+      btn.querySelector('span').textContent = config.btnText;
+
+      // Update video layer visibility
+      document.querySelectorAll('.video-state-layer').forEach(layer => {
+        layer.classList.add('hidden');
+        layer.classList.remove('flex');
+      });
+      const currentLayer = document.getElementById(config.videoLayerId);
+      if (currentLayer) {
+        currentLayer.classList.remove('hidden');
+        currentLayer.classList.add('flex');
+      }
+
+      // Handle mic meter visibility on mic-blocked state
+      const meter = document.getElementById('sound-meter');
+      const micLabel = document.getElementById('mic-label-text');
+      if (stateKey === 'mic-blocked') {
+        meter.classList.add('opacity-30');
+        micLabel.textContent = 'Mic blocked';
+      } else if (!isMicMuted) {
+        meter.classList.remove('opacity-30');
+        micLabel.textContent = 'Mic active';
+      }
+    }
+
+    function toggleMic() {
+      if (currentScenario === 'mic-blocked') return;
+      isMicMuted = !isMicMuted;
+      const iconActive = document.getElementById('mic-icon-active');
+      const iconMuted = document.getElementById('mic-icon-muted');
+      const meter = document.getElementById('sound-meter');
+      const label = document.getElementById('mic-label-text');
+
+      if (isMicMuted) {
+        iconActive.classList.add('hidden');
+        iconMuted.classList.remove('hidden');
+        meter.classList.add('opacity-20');
+        label.textContent = 'Muted';
+      } else {
+        iconActive.classList.remove('hidden');
+        iconMuted.classList.add('hidden');
+        meter.classList.remove('opacity-20');
+        label.textContent = 'Mic active';
+      }
+    }
+
+    function flipCameraPreview() {
+      const preview = document.querySelector('.mirrored-preview');
+      if (preview) {
+        preview.classList.toggle('mirrored-preview');
+      }
+    }
+
+    function updatePreviewName(val) {
+      const label = document.getElementById('preview-display-name');
+      label.textContent = val.trim() ? val.trim() : 'You';
+    }
+
+    function toggleDevicePicker() {
+      const picker = document.getElementById('device-picker-body');
+      const arrow = document.getElementById('device-picker-arrow');
+      picker.classList.toggle('hidden');
+      arrow.classList.toggle('rotate-180');
+    }
+
+    function handlePrimaryAction() {
+      if (currentScenario === 'permission' || currentScenario === 'camera-blocked' || currentScenario === 'camera-busy') {
+        switchState('ready');
+      } else {
+        alert('Entering photobooth room #412...');
+      }
+    }
+  </script>
+</body></html>

@@ -1,0 +1,660 @@
+<!-- Snapduo Photobooth — Calm (Desktop & Mobile) -->
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Snapduo — Calm Photobooth</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;700;800&amp;family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          brand: '#FF6B2C',
+          'brand-hover': '#E5571A',
+          ink: '#1F1A17',
+          'ink-muted': '#6B625A',
+          surface: '#FBF9F6',
+          'surface-card': '#FFFFFF',
+          'surface-alt': '#F5F3F0',
+          borderline: '#ECE8E3',
+          'video-tile': '#0E0C0A',
+          'status-good': '#12A594',
+          'status-warn': '#E8A317',
+          'status-danger': '#D7263D',
+          "primary-container": "#FF6B2C",
+          "on-surface": "#1B1C1A",
+          secondary: "#645D59",
+          "surface-container-low": "#F5F3F0",
+          "surface-container-highest": "#E4E2DF",
+          "surface-container-lowest": "#FFFFFF",
+          error: "#BA1A1A",
+          "error-container": "#FFDAD6"
+        },
+        fontFamily: {
+          display: ['"Bricolage Grotesque"', 'sans-serif'],
+          body: ['"DM Sans"', 'sans-serif'],
+          mono: ['"Space Mono"', 'monospace'],
+        }
+      }
+    }
+  }
+</script>
+<style>
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+</head>
+<body class="bg-[#F3F1ED] text-ink font-body antialiased min-h-screen flex flex-col justify-between selection:bg-brand selection:text-white">
+<!-- View Switcher Toolbar (Presentation Controls) -->
+<aside class="sticky top-0 z-40 w-full bg-[#1F1A17] text-white/90 border-b border-white/10 px-4 py-2.5 shadow-md">
+<div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+<div class="flex items-center gap-2">
+<div class="flex items-center gap-1.5 font-display font-bold text-sm tracking-tight text-white">
+<svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+<circle cx="12" cy="13" r="3"></circle>
+</svg>
+        Snapduo Booth Studio
+      </div>
+<span class="text-white/40">|</span>
+<span class="font-mono text-[11px] text-white/70">Presentation Mode</span>
+</div>
+<!-- Toggle Controls -->
+<div class="flex items-center gap-2">
+<div class="inline-flex rounded-full bg-white/10 p-0.5 border border-white/10">
+<button class="px-3 py-1 rounded-full text-xs font-medium transition-all bg-white text-ink shadow-sm flex items-center gap-1.5" id="tab-desktop" onclick="setView('desktop')" type="button">
+<span class="material-symbols-outlined text-[15px]">desktop_windows</span>
+          Desktop (1280px)
+        </button>
+<button class="px-3 py-1 rounded-full text-xs font-medium transition-all text-white/80 hover:text-white flex items-center gap-1.5" id="tab-mobile" onclick="setView('mobile')" type="button">
+<span class="material-symbols-outlined text-[15px]">smartphone</span>
+          Mobile (390px)
+        </button>
+<button class="px-3 py-1 rounded-full text-xs font-medium transition-all text-white/80 hover:text-white flex items-center gap-1.5" id="tab-split" onclick="setView('split')" type="button">
+<span class="material-symbols-outlined text-[15px]">view_column</span>
+          Side-by-side
+        </button>
+</div>
+<!-- Dialog triggers -->
+<button class="px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white/90 transition-all font-mono text-[11px] flex items-center gap-1" onclick="openModal('frameModal')" type="button">
+<span class="material-symbols-outlined text-[14px] text-brand">notifications</span>
+        Confirm dialog
+      </button>
+<button class="px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white/90 transition-all font-mono text-[11px] flex items-center gap-1" onclick="toggleSlotState()" type="button">
+<span class="material-symbols-outlined text-[14px] text-status-good">autorenew</span>
+        Toggle 4/4 filled
+      </button>
+</div>
+</div>
+</aside>
+<!-- Main Wrapper -->
+<main class="w-full flex-1 max-w-[1520px] mx-auto p-3 sm:p-6 flex flex-col items-center justify-center">
+<!-- Desktop Presentation Container -->
+<section class="w-full max-w-[1280px] bg-surface rounded-2xl border border-borderline shadow-sm overflow-hidden flex flex-col transition-all duration-300" id="desktop-wrapper">
+<!-- Desktop Minimal Header -->
+<header class="w-full border-b border-borderline py-3 px-6 bg-surface-card flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2">
+<svg class="w-5 h-5 text-brand" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+<circle cx="12" cy="13" r="3"></circle>
+</svg>
+<span class="font-display font-bold text-base tracking-tight text-ink">Snapduo</span>
+</div>
+<span class="font-mono text-xs text-ink/80 bg-surface-alt px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 border border-borderline">
+<span class="w-2 h-2 rounded-full bg-status-good animate-pulse"></span>
+          Room #412
+        </span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-xs text-ink-muted flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-status-good"></span>
+          Alex picked Quad grid
+        </span>
+<button class="font-body text-xs font-medium text-ink-muted hover:text-error transition-colors px-3 py-1 rounded-full hover:bg-error-container/30" onclick="alert('Leaving photobooth room #412...')" type="button">
+          Leave
+        </button>
+</div>
+</header>
+<!-- Desktop Sub-Header: Frame selection & Timer chips -->
+<div class="w-full border-b border-borderline/80 px-6 py-3 bg-surface flex flex-wrap items-center justify-between gap-4">
+<!-- Frame selector -->
+<div class="flex items-center gap-3 overflow-x-auto no-scrollbar">
+<span class="text-xs font-semibold text-ink uppercase tracking-wider font-mono text-[11px]">Frame:</span>
+<!-- Classic strip -->
+<button class="frame-thumb-btn flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-borderline bg-surface-card hover:border-ink/40 transition-all text-left" onclick="handleFrameClick('Classic strip (3 photos)')" type="button">
+<div class="w-5 h-7 bg-surface-alt rounded-[2px] border border-stone-300 flex flex-col justify-between p-0.5">
+<span class="w-full h-1 bg-stone-300 rounded-[1px]"></span>
+<span class="w-full h-1 bg-stone-300 rounded-[1px]"></span>
+<span class="w-full h-1 bg-stone-300 rounded-[1px]"></span>
+</div>
+<span class="text-xs font-medium text-ink">Classic strip <span class="text-ink-muted text-[11px] font-mono">(3)</span></span>
+</button>
+<!-- Tandem -->
+<button class="frame-thumb-btn flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-borderline bg-surface-card hover:border-ink/40 transition-all text-left" onclick="handleFrameClick('Tandem (2 photos)')" type="button">
+<div class="w-5 h-7 bg-surface-alt rounded-[2px] border border-stone-300 flex flex-col justify-around p-0.5">
+<span class="w-full h-2 bg-stone-300 rounded-[1px]"></span>
+<span class="w-full h-2 bg-stone-300 rounded-[1px]"></span>
+</div>
+<span class="text-xs font-medium text-ink">Tandem <span class="text-ink-muted text-[11px] font-mono">(2)</span></span>
+</button>
+<!-- Quad grid (Active) -->
+<button class="frame-thumb-btn ring-2 ring-ink flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-surface-card shadow-xs text-left" type="button">
+<div class="w-5 h-7 bg-surface-alt rounded-[2px] border border-stone-300 grid grid-cols-2 gap-0.5 p-0.5 items-center">
+<span class="w-full h-2 bg-stone-400 rounded-[1px]"></span>
+<span class="w-full h-2 bg-stone-400 rounded-[1px]"></span>
+<span class="w-full h-2 bg-stone-400 rounded-[1px]"></span>
+<span class="w-full h-2 bg-stone-400 rounded-[1px]"></span>
+</div>
+<span class="text-xs font-semibold text-ink">Quad grid <span class="text-ink-muted text-[11px] font-mono">(4)</span></span>
+</button>
+<!-- Portrait -->
+<button class="frame-thumb-btn flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-borderline bg-surface-card hover:border-ink/40 transition-all text-left" onclick="handleFrameClick('Portrait (1 photo)')" type="button">
+<div class="w-5 h-7 bg-surface-alt rounded-[2px] border border-stone-300 p-0.5">
+<span class="w-full h-full bg-stone-300 rounded-[1px] block"></span>
+</div>
+<span class="text-xs font-medium text-ink">Portrait <span class="text-ink-muted text-[11px] font-mono">(1)</span></span>
+</button>
+</div>
+<!-- Timer Chips -->
+<div class="flex items-center gap-1.5 bg-surface-card border border-borderline p-1 rounded-full">
+<span class="font-mono text-[11px] text-ink-muted px-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">timer</span>
+          Delay
+        </span>
+<button class="timer-btn px-2.5 py-0.5 rounded-full font-mono text-xs transition-colors bg-ink text-white font-bold" onclick="setTimerChip(this)" type="button">3s</button>
+<button class="timer-btn px-2.5 py-0.5 rounded-full font-mono text-xs transition-colors text-ink-muted hover:text-ink" onclick="setTimerChip(this)" type="button">5s</button>
+<button class="timer-btn px-2.5 py-0.5 rounded-full font-mono text-xs transition-colors text-ink-muted hover:text-ink" onclick="setTimerChip(this)" type="button">10s</button>
+</div>
+</div>
+<!-- Desktop Body: Two Columns (Stage + Photo Strip Panel) -->
+<div class="w-full grid grid-cols-1 lg:grid-cols-[1fr_290px] gap-6 p-6">
+<!-- Left/Center: Video Stage -->
+<div class="flex flex-col items-center justify-between">
+<!-- Live Syncing Indicator / Friend retake note -->
+<div class="w-full flex items-center justify-between mb-3 px-1">
+<div class="inline-flex items-center gap-2 bg-[#FFF3EB] border border-[#FF6B2C]/20 px-3 py-1 rounded-full text-xs text-ink">
+<span class="material-symbols-outlined text-brand text-[15px] animate-spin" style="animation-duration: 4s;">sync</span>
+<span><strong>Alex</strong> selected photo 2 to retake</span>
+</div>
+<span class="text-xs text-ink-muted font-mono">Synced photobooth</span>
+</div>
+<!-- Video Tiles (side-by-side) -->
+<div class="w-full grid grid-cols-2 gap-4">
+<!-- Tile 1: Alex (You) - Orange active border -->
+<div class="relative aspect-[4/3] bg-video-tile rounded-2xl overflow-hidden flex flex-col justify-between p-3.5 ring-2 ring-primary-container shadow-sm">
+<div class="w-full flex items-center justify-between z-10">
+<span class="text-[10px] uppercase font-mono tracking-wider bg-black/50 text-white/70 px-2 py-0.5 rounded backdrop-blur-sm">Host</span>
+<div class="flex items-center gap-1 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded-full text-[11px] text-white/90">
+<span class="w-1.5 h-1.5 rounded-full bg-status-good animate-pulse"></span>
+<span>Active</span>
+</div>
+</div>
+<!-- Silhouette Alex -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+<div class="relative flex flex-col items-center opacity-85">
+<div class="w-20 h-24 bg-stone-700/80 rounded-[44px] mb-[-10px]"></div>
+<div class="w-36 h-20 bg-stone-700/80 rounded-t-[60px]"></div>
+<div class="absolute inset-x-[-20px] top-1/2 h-[1px] bg-white/10"></div>
+<div class="absolute inset-y-[-20px] left-1/2 w-[1px] bg-white/10"></div>
+</div>
+</div>
+<!-- Bottom Label -->
+<div class="w-full flex items-center justify-between z-10">
+<div class="inline-flex items-center gap-1.5 bg-[#0E0C0A]/85 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10">
+<span class="w-1.5 h-1.5 rounded-full bg-status-good"></span>
+<span class="text-xs text-white font-medium">Alex (You)</span>
+</div>
+</div>
+</div>
+<!-- Tile 2: Sam - Friend with weak connection badge -->
+<div class="relative aspect-[4/3] bg-video-tile rounded-2xl overflow-hidden flex flex-col justify-between p-3.5 ring-1 ring-white/10 shadow-sm">
+<!-- Top Right: Weak connection badge -->
+<div class="w-full flex items-center justify-end z-10">
+<div class="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10">
+<span class="w-1.5 h-1.5 rounded-full bg-status-warn"></span>
+<span class="font-mono text-[11px] text-amber-200">Weak connection</span>
+</div>
+</div>
+<!-- Silhouette Sam -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+<div class="relative flex flex-col items-center opacity-85 rotate-[-2deg]">
+<div class="w-20 h-24 bg-stone-700/80 rounded-[44px] mb-[-10px]"></div>
+<div class="w-36 h-20 bg-stone-700/80 rounded-t-[60px]"></div>
+<div class="absolute inset-x-[-20px] top-1/2 h-[1px] bg-white/10"></div>
+<div class="absolute inset-y-[-20px] left-1/2 w-[1px] bg-white/10"></div>
+</div>
+</div>
+<!-- Bottom Label -->
+<div class="w-full flex items-center justify-between z-10">
+<div class="inline-flex items-center gap-1.5 bg-[#0E0C0A]/85 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10">
+<span class="w-1.5 h-1.5 rounded-full bg-status-good"></span>
+<span class="text-xs text-white font-medium">Sam</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Desktop Stage Controls Bar -->
+<div class="flex flex-col items-center mt-5 mb-1">
+<div class="flex items-center gap-8">
+<!-- Mic Toggle (52px) -->
+<button class="w-[52px] h-[52px] rounded-full bg-surface-card border border-borderline hover:bg-surface-alt transition-all flex items-center justify-center text-ink shadow-sm" onclick="toggleMicIcon(this)" title="Toggle microphone" type="button">
+<span class="material-symbols-outlined text-xl">mic</span>
+</button>
+<!-- Shutter Hero (76px signature orange circle) -->
+<div class="relative flex flex-col items-center">
+<button class="w-[76px] h-[76px] rounded-full bg-surface-card border border-borderline flex items-center justify-center transition-transform active:scale-95 shadow-md" id="main-shutter-btn" onclick="triggerFlash()" type="button">
+<div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center hover:scale-[1.02] transition-transform">
+<span class="material-symbols-outlined text-white text-2xl">photo_camera</span>
+</div>
+</button>
+</div>
+<!-- Flip Camera (52px) -->
+<button class="w-[52px] h-[52px] rounded-full bg-surface-card border border-borderline hover:bg-surface-alt transition-all flex items-center justify-center text-ink shadow-sm" onclick="flipCameraEffect()" title="Switch camera" type="button">
+<span class="material-symbols-outlined text-xl">flip_camera_ios</span>
+</button>
+</div>
+<!-- Dynamic Shutter Label below hero -->
+<div class="mt-2 text-center">
+<span class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand bg-[#FFF0E8] border border-brand/20 px-3 py-0.5 rounded-full" id="shutter-label">
+<span class="w-1.5 h-1.5 rounded-full bg-brand animate-ping"></span>
+              Retake photo 2
+            </span>
+</div>
+</div>
+</div>
+<!-- Right Side Panel (~280px): Your Photos Mockup -->
+<div class="w-full bg-surface-card rounded-xl border border-borderline p-4 flex flex-col justify-between shadow-xs">
+<div>
+<!-- Header -->
+<div class="flex items-center justify-between pb-3 border-b border-borderline">
+<div>
+<h2 class="text-sm font-bold text-ink">Your photos</h2>
+<p class="text-[11px] text-ink-muted">Tap slot to retake</p>
+</div>
+<span class="font-mono text-xs bg-surface-alt text-ink px-2 py-0.5 rounded-full border border-borderline font-medium" id="slot-counter-badge">
+              2 of 4 taken
+            </span>
+</div>
+<!-- Quad Frame Mockup with 4 Numbered Slots -->
+<div class="my-4 p-2.5 bg-[#FAF7F3] rounded-lg border border-borderline">
+<div class="grid grid-cols-2 gap-2">
+<!-- Slot 1: Filled with photo preview -->
+<div class="relative aspect-[3/4] bg-[#2A2623] rounded-md overflow-hidden border border-borderline flex flex-col justify-between p-1.5 cursor-pointer hover:opacity-90 transition-opacity" onclick="selectSlot(1)">
+<!-- Simulated monochrome/warm capture duo -->
+<div class="absolute inset-0 bg-gradient-to-tr from-stone-900 via-stone-700 to-stone-500 opacity-90 flex items-center justify-center">
+<div class="flex -space-x-2 opacity-60">
+<div class="w-8 h-8 rounded-full bg-stone-300"></div>
+<div class="w-8 h-8 rounded-full bg-stone-400"></div>
+</div>
+</div>
+<div class="z-10 flex items-center justify-between">
+<span class="font-mono text-[10px] text-white/80 bg-black/50 px-1 rounded">#1</span>
+<span class="material-symbols-outlined text-status-good text-sm bg-black/60 rounded-full">check_circle</span>
+</div>
+<div class="z-10 text-[10px] text-white/90 font-mono text-right">00:03</div>
+</div>
+<!-- Slot 2: Selected slot (Retake status) -->
+<div class="relative aspect-[3/4] bg-[#2A2623] rounded-md overflow-hidden ring-2 ring-primary-container flex flex-col justify-between p-1.5 shadow-sm cursor-pointer" id="slot-2-container" onclick="selectSlot(2)">
+<div class="absolute inset-0 bg-stone-800 opacity-90 flex items-center justify-center">
+<div class="flex -space-x-2 opacity-40">
+<div class="w-8 h-8 rounded-full bg-stone-400"></div>
+<div class="w-8 h-8 rounded-full bg-stone-500"></div>
+</div>
+</div>
+<div class="z-10 flex items-center justify-between">
+<span class="font-mono text-[10px] text-white/90 bg-black/70 px-1 rounded">#2</span>
+<span class="bg-brand text-white font-mono text-[9px] px-1 rounded font-bold uppercase tracking-wider">Retake</span>
+</div>
+<div class="z-10 text-[10px] text-brand font-medium bg-black/80 px-1 rounded-sm text-center">Selected</div>
+</div>
+<!-- Slot 3: Empty slot -->
+<div class="aspect-[3/4] rounded-md border-2 border-dashed border-stone-300 bg-white/70 flex flex-col items-center justify-center gap-1 text-stone-400 cursor-pointer hover:border-stone-400 transition-colors" id="slot-3-container" onclick="selectSlot(3)">
+<span class="material-symbols-outlined text-lg">add_a_photo</span>
+<span class="font-mono text-[11px] text-stone-400">#3</span>
+</div>
+<!-- Slot 4: Empty slot -->
+<div class="aspect-[3/4] rounded-md border-2 border-dashed border-stone-300 bg-white/70 flex flex-col items-center justify-center gap-1 text-stone-400 cursor-pointer hover:border-stone-400 transition-colors" id="slot-4-container" onclick="selectSlot(4)">
+<span class="material-symbols-outlined text-lg">add_a_photo</span>
+<span class="font-mono text-[11px] text-stone-400">#4</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom action: Done button -->
+<div class="pt-2 border-t border-borderline">
+<button class="w-full py-2.5 px-4 rounded-xl font-medium text-xs transition-all bg-surface-alt text-ink-muted cursor-not-allowed flex items-center justify-center gap-2" disabled="" id="done-action-btn" type="button">
+<span>Done</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+<p class="text-[11px] text-center text-ink-muted mt-1.5 font-body" id="done-hint-text">Fill all 4 photos to finish</p>
+</div>
+</div>
+</div>
+<!-- Desktop Minimal Footer -->
+<footer class="w-full border-t border-borderline py-3 px-6 text-center text-xs text-ink-muted bg-surface-card">
+<div class="flex flex-col sm:flex-row items-center justify-between gap-2">
+<p>No sign up. Shared photos are deleted after 24 hours.</p>
+<span class="font-mono text-ink">snapduo.app/r/412</span>
+</div>
+</footer>
+</section>
+<!-- Mobile Presentation Container (390px Phone Shell) -->
+<section class="w-full max-w-[390px] my-6 bg-surface rounded-[38px] border-4 border-[#1F1A17] shadow-xl overflow-hidden flex flex-col transition-all duration-300" id="mobile-wrapper">
+<!-- Mobile Notch / Status Bar -->
+<div class="w-full bg-[#1F1A17] pt-2 pb-1 px-6 flex items-center justify-between text-white text-[11px] font-mono">
+<span>9:41</span>
+<div class="w-20 h-4 bg-black rounded-full mx-auto -mt-1"></div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">signal_cellular_alt</span>
+<span class="material-symbols-outlined text-[13px]">wifi</span>
+<span class="material-symbols-outlined text-[13px]">battery_full</span>
+</div>
+</div>
+<!-- Mobile Top Bar: Room on left, Done button on right -->
+<div class="w-full px-4 py-2.5 bg-surface-card border-b border-borderline flex items-center justify-between">
+<div class="flex items-center gap-1.5 font-mono text-xs text-ink">
+<span class="w-2 h-2 rounded-full bg-status-good animate-pulse"></span>
+<span class="font-semibold">Room #412</span>
+</div>
+<button class="text-xs px-3 py-1 rounded-full bg-surface-alt text-ink-muted font-medium transition-all" disabled="" id="mobile-done-btn" type="button">
+        Done
+      </button>
+</div>
+<!-- Mobile Stacked Content -->
+<div class="p-3.5 flex flex-col gap-3">
+<!-- Frame selector horizontal scroll & Timer row -->
+<div class="flex items-center justify-between gap-2">
+<div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+<span class="px-2 py-0.5 rounded-full text-[11px] bg-ink text-white font-medium whitespace-nowrap">Quad (4)</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] bg-surface-card border border-borderline text-ink-muted whitespace-nowrap" onclick="openModal('frameModal')">Strip (3)</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] bg-surface-card border border-borderline text-ink-muted whitespace-nowrap" onclick="openModal('frameModal')">Tandem (2)</span>
+</div>
+<div class="flex items-center gap-1 bg-surface-card border border-borderline px-1.5 py-0.5 rounded-full shrink-0">
+<span class="font-mono text-[10px] text-ink font-bold">3s</span>
+<span class="font-mono text-[10px] text-ink-muted">5s</span>
+</div>
+</div>
+<!-- Friend action pill -->
+<div class="flex items-center justify-between text-[11px] text-ink-muted bg-[#FFF4EE] border border-brand/20 px-2.5 py-1 rounded-lg">
+<span class="flex items-center gap-1 text-ink font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-brand"></span>
+          Alex retaking #2
+        </span>
+<span class="font-mono text-[10px]">2 of 4 taken</span>
+</div>
+<!-- Video Tiles Stacked Vertically -->
+<div class="flex flex-col gap-2.5">
+<!-- Alex Video Tile (Top, Orange Border) -->
+<div class="relative w-full aspect-[16/10] bg-video-tile rounded-xl overflow-hidden flex flex-col justify-between p-2.5 ring-2 ring-primary-container">
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+<div class="relative flex flex-col items-center opacity-85">
+<div class="w-14 h-16 bg-stone-700/80 rounded-[30px] mb-[-8px]"></div>
+<div class="w-28 h-14 bg-stone-700/80 rounded-t-[40px]"></div>
+</div>
+</div>
+<div class="w-full flex items-center justify-end z-10">
+<span class="text-[9px] font-mono bg-black/60 text-white/80 px-1.5 py-0.5 rounded">You</span>
+</div>
+<div class="z-10 inline-flex items-center gap-1.5 bg-black/80 px-2 py-0.5 rounded-full w-max">
+<span class="w-1.5 h-1.5 rounded-full bg-status-good animate-pulse"></span>
+<span class="text-[11px] text-white">Alex</span>
+</div>
+</div>
+<!-- Sam Video Tile (Bottom, Weak connection badge) -->
+<div class="relative w-full aspect-[16/10] bg-video-tile rounded-xl overflow-hidden flex flex-col justify-between p-2.5 ring-1 ring-white/10">
+<div class="w-full flex items-center justify-end z-10">
+<div class="flex items-center gap-1 bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-full text-[10px] text-amber-200">
+<span class="w-1.5 h-1.5 rounded-full bg-status-warn"></span>
+<span>Weak</span>
+</div>
+</div>
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+<div class="relative flex flex-col items-center opacity-85">
+<div class="w-14 h-16 bg-stone-700/80 rounded-[30px] mb-[-8px]"></div>
+<div class="w-28 h-14 bg-stone-700/80 rounded-t-[40px]"></div>
+</div>
+</div>
+<div class="z-10 inline-flex items-center gap-1.5 bg-black/80 px-2 py-0.5 rounded-full w-max">
+<span class="w-1.5 h-1.5 rounded-full bg-status-good"></span>
+<span class="text-[11px] text-white">Sam</span>
+</div>
+</div>
+</div>
+<!-- Horizontal "Your photos" Strip -->
+<div class="w-full bg-surface-card border border-borderline rounded-xl p-2 flex items-center justify-between gap-1.5">
+<!-- Slot 1 -->
+<div class="relative w-14 h-16 bg-stone-800 rounded-md overflow-hidden flex flex-col justify-between p-1">
+<span class="font-mono text-[9px] text-white/80">#1</span>
+<span class="material-symbols-outlined text-status-good text-[13px] self-end">check_circle</span>
+</div>
+<!-- Slot 2 (Retake) -->
+<div class="relative w-14 h-16 bg-stone-800 rounded-md overflow-hidden ring-2 ring-primary-container flex flex-col justify-between p-1">
+<div class="flex items-center justify-between">
+<span class="font-mono text-[9px] text-white/90">#2</span>
+<span class="bg-brand text-white font-mono text-[7px] px-0.5 rounded">Retake</span>
+</div>
+<span class="text-[8px] text-brand font-medium text-center">Active</span>
+</div>
+<!-- Slot 3 -->
+<div class="w-14 h-16 rounded-md border border-dashed border-stone-300 flex flex-col items-center justify-center text-stone-400">
+<span class="material-symbols-outlined text-[13px]">camera_alt</span>
+<span class="font-mono text-[9px]">#3</span>
+</div>
+<!-- Slot 4 -->
+<div class="w-14 h-16 rounded-md border border-dashed border-stone-300 flex flex-col items-center justify-center text-stone-400">
+<span class="material-symbols-outlined text-[13px]">camera_alt</span>
+<span class="font-mono text-[9px]">#4</span>
+</div>
+</div>
+<!-- Mobile Bottom Bar Controls -->
+<div class="flex items-center justify-around pt-1 pb-2">
+<!-- Mic -->
+<button class="w-11 h-11 rounded-full bg-surface-card border border-borderline flex items-center justify-center text-ink shadow-xs" onclick="toggleMicIcon(this)" type="button">
+<span class="material-symbols-outlined text-lg">mic</span>
+</button>
+<!-- Shutter Hero -->
+<div class="flex flex-col items-center">
+<button class="w-[66px] h-[66px] rounded-full bg-surface-card border border-borderline flex items-center justify-center shadow-md active:scale-95 transition-transform" onclick="triggerFlash()" type="button">
+<div class="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-xl">photo_camera</span>
+</div>
+</button>
+<span class="text-[10px] text-brand font-medium mt-1">Retake photo 2</span>
+</div>
+<!-- Switch Cam -->
+<button class="w-11 h-11 rounded-full bg-surface-card border border-borderline flex items-center justify-center text-ink shadow-xs" onclick="flipCameraEffect()" type="button">
+<span class="material-symbols-outlined text-lg">flip_camera_ios</span>
+</button>
+</div>
+</div>
+<!-- Phone Bottom Home Bar -->
+<div class="w-full pb-2 pt-1 flex justify-center bg-surface-card">
+<div class="w-28 h-1 bg-stone-300 rounded-full"></div>
+</div>
+</section>
+</main>
+<!-- Frame Change Confirmation Dialog (Modal Overlay Component) -->
+<div class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4" id="frameModal">
+<div class="w-full max-w-sm bg-surface-card rounded-2xl p-5 shadow-2xl border border-borderline flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-150">
+<div class="flex items-center gap-2.5 text-ink">
+<span class="w-7 h-7 rounded-full bg-error-container/60 text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-base">warning</span>
+</span>
+<h3 class="text-base font-bold text-ink">Change frame?</h3>
+</div>
+<p class="text-xs text-ink-muted leading-relaxed">
+      Changing to a 2-photo frame will clear your photos.
+    </p>
+<div class="flex items-center justify-end gap-2 pt-2 border-t border-borderline mt-1">
+<button class="px-3.5 py-1.5 rounded-xl border border-borderline bg-surface hover:bg-surface-alt text-xs font-medium text-ink transition-colors" onclick="closeModal('frameModal')" type="button">
+        Keep current
+      </button>
+<button class="px-3.5 py-1.5 rounded-xl bg-error text-white hover:bg-red-700 text-xs font-medium transition-colors" onclick="confirmFrameChange()" type="button">
+        Change frame
+      </button>
+</div>
+</div>
+</div>
+<!-- Photobooth Flash Effect Burst -->
+<div class="pointer-events-none fixed inset-0 z-50 bg-white opacity-0 transition-opacity duration-100" id="shutter-flash"></div>
+<!-- Scripts for dynamic presentation behaviors -->
+<script>
+  let isAllFilled = false;
+  let activeSlot = 2;
+
+  function setView(mode) {
+    const desktopWrap = document.getElementById('desktop-wrapper');
+    const mobileWrap = document.getElementById('mobile-wrapper');
+    const tabDesk = document.getElementById('tab-desktop');
+    const tabMob = document.getElementById('tab-mobile');
+    const tabSplit = document.getElementById('tab-split');
+
+    const activeClasses = 'px-3 py-1 rounded-full text-xs font-medium transition-all bg-white text-ink shadow-sm flex items-center gap-1.5';
+    const inactiveClasses = 'px-3 py-1 rounded-full text-xs font-medium transition-all text-white/80 hover:text-white flex items-center gap-1.5';
+
+    tabDesk.className = inactiveClasses;
+    tabMob.className = inactiveClasses;
+    tabSplit.className = inactiveClasses;
+
+    if (mode === 'desktop') {
+      tabDesk.className = activeClasses;
+      desktopWrap.classList.remove('hidden');
+      mobileWrap.classList.add('hidden');
+    } else if (mode === 'mobile') {
+      tabMob.className = activeClasses;
+      desktopWrap.classList.add('hidden');
+      mobileWrap.classList.remove('hidden');
+    } else {
+      tabSplit.className = activeClasses;
+      desktopWrap.classList.remove('hidden');
+      mobileWrap.classList.remove('hidden');
+    }
+  }
+
+  function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+  }
+
+  function handleFrameClick(frameName) {
+    openModal('frameModal');
+  }
+
+  function confirmFrameChange() {
+    closeModal('frameModal');
+    alert('Frame changed. Photos reset.');
+  }
+
+  function triggerFlash() {
+    const flash = document.getElementById('shutter-flash');
+    flash.classList.remove('opacity-0');
+    flash.classList.add('opacity-90');
+    setTimeout(() => {
+      flash.classList.remove('opacity-90');
+      flash.classList.add('opacity-0');
+    }, 120);
+  }
+
+  function toggleSlotState() {
+    isAllFilled = !isAllFilled;
+    const badge = document.getElementById('slot-counter-badge');
+    const doneBtn = document.getElementById('done-action-btn');
+    const doneHint = document.getElementById('done-hint-text');
+    const mobDoneBtn = document.getElementById('mobile-done-btn');
+    const s3 = document.getElementById('slot-3-container');
+    const s4 = document.getElementById('slot-4-container');
+
+    if (isAllFilled) {
+      badge.textContent = '4 of 4 taken';
+      badge.className = 'font-mono text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200 font-medium';
+      
+      doneBtn.disabled = false;
+      doneBtn.className = 'w-full py-2.5 px-4 rounded-xl font-medium text-xs transition-all bg-brand hover:bg-brand-hover text-white shadow-sm flex items-center justify-center gap-2 cursor-pointer';
+      doneHint.textContent = 'All photos taken. Tap Done to generate print strip.';
+
+      mobDoneBtn.disabled = false;
+      mobDoneBtn.className = 'text-xs px-3 py-1 rounded-full bg-brand text-white font-medium transition-all shadow-xs';
+
+      s3.innerHTML = `
+        <div class="relative w-full h-full bg-[#2A2623] rounded-md overflow-hidden flex flex-col justify-between p-1.5">
+          <div class="z-10 flex items-center justify-between">
+            <span class="font-mono text-[10px] text-white/80 bg-black/50 px-1 rounded">#3</span>
+            <span class="material-symbols-outlined text-status-good text-sm">check_circle</span>
+          </div>
+          <div class="z-10 text-[10px] text-white/90 font-mono text-right">00:08</div>
+        </div>
+      `;
+      s4.innerHTML = `
+        <div class="relative w-full h-full bg-[#2A2623] rounded-md overflow-hidden flex flex-col justify-between p-1.5">
+          <div class="z-10 flex items-center justify-between">
+            <span class="font-mono text-[10px] text-white/80 bg-black/50 px-1 rounded">#4</span>
+            <span class="material-symbols-outlined text-status-good text-sm">check_circle</span>
+          </div>
+          <div class="z-10 text-[10px] text-white/90 font-mono text-right">00:12</div>
+        </div>
+      `;
+    } else {
+      badge.textContent = '2 of 4 taken';
+      badge.className = 'font-mono text-xs bg-surface-alt text-ink px-2 py-0.5 rounded-full border border-borderline font-medium';
+      
+      doneBtn.disabled = true;
+      doneBtn.className = 'w-full py-2.5 px-4 rounded-xl font-medium text-xs transition-all bg-surface-alt text-ink-muted cursor-not-allowed flex items-center justify-center gap-2';
+      doneHint.textContent = 'Fill all 4 photos to finish';
+
+      mobDoneBtn.disabled = true;
+      mobDoneBtn.className = 'text-xs px-3 py-1 rounded-full bg-surface-alt text-ink-muted font-medium transition-all';
+
+      s3.innerHTML = `
+        <span class="material-symbols-outlined text-lg">add_a_photo</span>
+        <span class="font-mono text-[11px] text-stone-400">#3</span>
+      `;
+      s4.innerHTML = `
+        <span class="material-symbols-outlined text-lg">add_a_photo</span>
+        <span class="font-mono text-[11px] text-stone-400">#4</span>
+      `;
+    }
+  }
+
+  function selectSlot(slotNum) {
+    activeSlot = slotNum;
+    const label = document.getElementById('shutter-label');
+    label.innerHTML = `
+      <span class="w-1.5 h-1.5 rounded-full bg-brand animate-ping"></span>
+      Retake photo ${slotNum}
+    `;
+  }
+
+  function setTimerChip(btn) {
+    document.querySelectorAll('.timer-btn').forEach(b => {
+      b.className = 'timer-btn px-2.5 py-0.5 rounded-full font-mono text-xs transition-colors text-ink-muted hover:text-ink';
+    });
+    btn.className = 'timer-btn px-2.5 py-0.5 rounded-full font-mono text-xs transition-colors bg-ink text-white font-bold';
+  }
+
+  function toggleMicIcon(btn) {
+    const icon = btn.querySelector('.material-symbols-outlined');
+    if (icon.textContent === 'mic') {
+      icon.textContent = 'mic_off';
+      btn.classList.add('text-error');
+    } else {
+      icon.textContent = 'mic';
+      btn.classList.remove('text-error');
+    }
+  }
+
+  function flipCameraEffect() {
+    triggerFlash();
+  }
+</script>
+</body></html>

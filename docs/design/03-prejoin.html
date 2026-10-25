@@ -1,0 +1,596 @@
+<!-- Snapduo Pre-join Check (Calm) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snapduo — Check your camera and audio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#FF6B2C',
+            'brand-hover': '#E5571A',
+            ink: '#1F1A17',
+            'ink-muted': '#6B625A',
+            surface: '#FFFFFF',
+            'surface-alt': '#F5F3F0',
+            borderline: '#ECE8E3',
+            'video-tile': '#0E0C0A',
+            'status-good': '#12A594',
+            'status-warn': '#E8A317',
+            'status-danger': '#D7263D',
+          },
+          fontFamily: {
+            display: ['"Bricolage Grotesque"', 'sans-serif'],
+            body: ['"DM Sans"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Sound meter bar animation */
+    @keyframes audioPulse {
+      0%, 100% { height: 6px; }
+      50% { height: 16px; }
+    }
+    .meter-bar-1 { animation: audioPulse 1.1s ease-in-out infinite; }
+    .meter-bar-2 { animation: audioPulse 0.8s ease-in-out infinite 0.2s; }
+    .meter-bar-3 { animation: audioPulse 1.3s ease-in-out infinite 0.4s; }
+    .meter-bar-4 { animation: audioPulse 0.9s ease-in-out infinite 0.1s; }
+
+    /* Mirrored camera view */
+    .mirrored-preview {
+      transform: scaleX(-1);
+    }
+  </style>
+</head>
+<body class="bg-surface text-ink font-body antialiased min-h-screen flex flex-col justify-between selection:bg-brand selection:text-ink">
+
+  <!-- Top Minimal Calm Header -->
+  <header class="w-full border-b border-borderline py-4 px-5 sm:px-8">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <!-- Snapduo Calm Logo Mark -->
+        <svg class="w-6 h-6 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+          <circle cx="12" cy="13" r="3"/>
+        </svg>
+        <span class="font-display font-bold text-lg tracking-tight text-ink">Snapduo</span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-alt text-xs font-mono text-ink-muted">
+          <span class="w-2 h-2 rounded-full bg-status-good"></span>
+          Room #412
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="w-full flex-1 max-w-4xl mx-auto px-5 py-6 sm:py-8 flex flex-col justify-center">
+
+    <!-- Interactive Variant Switcher for Reviewing all requested scenarios -->
+    <div class="mb-6 p-2 rounded-2xl bg-surface-alt border border-borderline flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+      <div class="flex items-center gap-2 px-2">
+        <span class="text-xs uppercase tracking-wider font-mono text-ink-muted">State view:</span>
+        <span id="current-state-indicator" class="text-xs font-medium text-ink bg-white px-2 py-0.5 rounded-full border border-borderline">Ready to enter</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-1.5 text-xs">
+        <button onclick="switchState('ready')" id="btn-state-ready" class="state-tab px-3 py-1.5 rounded-full font-medium transition-all bg-ink text-white">
+          Ready
+        </button>
+        <button onclick="switchState('permission')" id="btn-state-permission" class="state-tab px-3 py-1.5 rounded-full font-medium transition-all bg-white hover:bg-neutral-100 text-ink border border-borderline">
+          1. Permission needed
+        </button>
+        <button onclick="switchState('camera-blocked')" id="btn-state-camera-blocked" class="state-tab px-3 py-1.5 rounded-full font-medium transition-all bg-white hover:bg-neutral-100 text-ink border border-borderline">
+          2. Camera blocked
+        </button>
+        <button onclick="switchState('mic-blocked')" id="btn-state-mic-blocked" class="state-tab px-3 py-1.5 rounded-full font-medium transition-all bg-white hover:bg-neutral-100 text-ink border border-borderline">
+          3. Mic blocked only
+        </button>
+        <button onclick="switchState('camera-busy')" id="btn-state-camera-busy" class="state-tab px-3 py-1.5 rounded-full font-medium transition-all bg-white hover:bg-neutral-100 text-ink border border-borderline">
+          4. Camera busy
+        </button>
+      </div>
+    </div>
+
+    <!-- Calm Heading -->
+    <div class="mb-5 text-center sm:text-left">
+      <h1 id="screen-heading" class="font-display font-bold text-2xl sm:text-[26px] text-ink leading-tight">
+        Check your camera and audio
+      </h1>
+      <p id="screen-subheading" class="text-sm text-ink-muted mt-1">
+        Take a moment to see how you look before joining your friend.
+      </p>
+    </div>
+
+    <!-- Dual Layout: Self-preview on top/left, controls on bottom/right -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+
+      <!-- LEFT / TOP COLUMN: Video Tile & Quick Toggles (7 cols on desktop) -->
+      <div class="md:col-span-7 flex flex-col gap-4">
+
+        <!-- Mirrored Self-Preview Video Tile (Calm 20px radius, 1px subtle border, strictly no hard shadow) -->
+        <div class="relative w-full aspect-[4/3] sm:aspect-[16/11] bg-video-tile rounded-[20px] overflow-hidden border border-borderline shadow-sm flex items-center justify-center select-none">
+          
+          <!-- State Content inside Video Tile -->
+          
+          <!-- 0. Ready State (Live Video Simulation) -->
+          <div id="video-content-ready" class="video-state-layer absolute inset-0 flex items-center justify-center">
+            <!-- Simulated Camera Feed Silhouette (No real human photos per rule) -->
+            <div class="mirrored-preview flex flex-col items-center justify-center opacity-85">
+              <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-[#2A2520] flex items-center justify-center mb-[-12px] z-10 border border-[#3A332C]">
+                <!-- Head contour silhouette -->
+                <div class="w-16 h-16 rounded-full bg-[#1F1A17]"></div>
+              </div>
+              <div class="w-48 sm:w-56 h-32 sm:h-36 bg-[#2A2520] rounded-t-full border-t border-[#3A332C]"></div>
+            </div>
+
+            <!-- Mirrored Indicator Badge (Calm status) -->
+            <div class="absolute top-3.5 left-3.5 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-mono text-zinc-300 border border-white/10">
+              <svg class="w-3.5 h-3.5 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/>
+              </svg>
+              <span>Mirrored view</span>
+            </div>
+
+            <!-- Live Status Badge (Top right) -->
+            <div class="absolute top-3.5 right-3.5 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-medium text-emerald-300 border border-white/10">
+              <span class="w-2 h-2 rounded-full bg-status-good animate-pulse"></span>
+              <span>Camera active</span>
+            </div>
+
+            <!-- Name pill bottom-left -->
+            <div class="absolute bottom-3.5 left-3.5 px-3 py-1 rounded-full bg-black/70 backdrop-blur-sm text-xs text-white/90 border border-white/10 flex items-center gap-1.5">
+              <span id="preview-display-name">You</span>
+            </div>
+          </div>
+
+          <!-- 1. Permission Needed State -->
+          <div id="video-content-permission" class="video-state-layer absolute inset-0 hidden flex-col items-center justify-center p-6 text-center bg-[#15120F]">
+            <div class="w-14 h-14 rounded-full bg-[#2A2520] flex items-center justify-center text-brand mb-3 border border-white/10">
+              <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                <circle cx="12" cy="13" r="3"/>
+              </svg>
+            </div>
+            <h3 class="font-display font-bold text-lg text-white mb-1.5">Camera access needed</h3>
+            <p class="text-sm text-zinc-400 max-w-xs leading-relaxed">
+              We need your camera to take photos. Mic is optional.
+            </p>
+          </div>
+
+          <!-- 2. Camera Blocked State -->
+          <div id="video-content-camera-blocked" class="video-state-layer absolute inset-0 hidden flex-col items-center justify-center p-6 text-center bg-[#15120F]">
+            <div class="w-14 h-14 rounded-full bg-[#2A2520] flex items-center justify-center text-status-danger mb-3 border border-white/10">
+              <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="2" y1="2" x2="22" y2="22"/>
+                <path d="M10.41 10.41a2 2 0 1 0 2.83 2.83"/>
+                <path d="M13.5 4h-4L7.4 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 1.5 1.94"/>
+                <path d="M9.88 9.88A3 3 0 0 0 12 16a3 3 0 0 0 2.12-.88"/>
+                <path d="M17 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-.58 1.41"/>
+              </svg>
+            </div>
+            <h3 class="font-display font-bold text-lg text-white mb-1">Camera is blocked</h3>
+            <p class="text-xs text-zinc-400 max-w-xs mb-3">
+              Your browser is not allowing camera access. Follow these 2 quick steps:
+            </p>
+            <div class="bg-black/50 border border-white/10 rounded-xl p-3 text-left max-w-xs w-full text-xs text-zinc-300 space-y-1.5 font-mono">
+              <div class="flex items-start gap-2">
+                <span class="text-brand font-bold">1.</span>
+                <span>Click the lock icon in your browser address bar</span>
+              </div>
+              <div class="flex items-start gap-2">
+                <span class="text-brand font-bold">2.</span>
+                <span>Switch Camera to <strong class="text-white">Allow</strong> and refresh</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Mic Blocked State -->
+          <div id="video-content-mic-blocked" class="video-state-layer absolute inset-0 hidden flex-col items-center justify-center">
+            <div class="mirrored-preview flex flex-col items-center justify-center opacity-85">
+              <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-[#2A2520] flex items-center justify-center mb-[-12px] z-10 border border-[#3A332C]">
+                <div class="w-16 h-16 rounded-full bg-[#1F1A17]"></div>
+              </div>
+              <div class="w-48 sm:w-56 h-32 sm:h-36 bg-[#2A2520] rounded-t-full border-t border-[#3A332C]"></div>
+            </div>
+            <!-- Alert banner over video -->
+            <div class="absolute top-3.5 inset-x-3.5 mx-auto max-w-sm px-3.5 py-2 rounded-xl bg-black/80 backdrop-blur-md border border-white/10 flex items-center justify-between text-xs text-zinc-200">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-status-warn"></span>
+                <span>Microphone blocked</span>
+              </div>
+              <span class="text-[11px] text-zinc-400">Camera ready</span>
+            </div>
+            <div class="absolute bottom-3.5 left-3.5 px-3 py-1 rounded-full bg-black/70 backdrop-blur-sm text-xs text-white/90 border border-white/10">
+              <span>You (No microphone)</span>
+            </div>
+          </div>
+
+          <!-- 4. Camera Busy State -->
+          <div id="video-content-camera-busy" class="video-state-layer absolute inset-0 hidden flex-col items-center justify-center p-6 text-center bg-[#15120F]">
+            <div class="w-14 h-14 rounded-full bg-[#2A2520] flex items-center justify-center text-status-warn mb-3 border border-white/10">
+              <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <h3 class="font-display font-bold text-lg text-white mb-1.5">Camera busy</h3>
+            <p class="text-sm text-zinc-400 max-w-xs leading-relaxed mb-1">
+              Your camera is being used by another app.
+            </p>
+            <p class="text-xs text-zinc-500 max-w-xs">
+              Close Zoom, Meet, or FaceTime, then try again.
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Row of Calm Icon Buttons: Mic toggle with sound level bar + Switch camera -->
+        <div class="flex items-center justify-center sm:justify-start gap-3">
+          
+          <!-- Mic Toggle + Sound Level Bar Combined -->
+          <div class="flex items-center gap-2.5 px-3.5 py-2 rounded-full bg-surface-alt border border-borderline">
+            <button id="mic-toggle-btn" onclick="toggleMic()" type="button" aria-label="Toggle microphone" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-ink hover:bg-neutral-100 transition-colors border border-borderline">
+              <!-- Mic icon -->
+              <svg id="mic-icon-active" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="22"/>
+              </svg>
+              <!-- Slashed mic icon (hidden initially) -->
+              <svg id="mic-icon-muted" class="w-5 h-5 hidden text-status-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="2" y1="2" x2="22" y2="22"/>
+                <path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/>
+                <path d="M5 10v2a7 7 0 0 0 12 5"/>
+                <path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/>
+                <path d="M9 9v3a3 3 0 0 0 5.12 2.12"/>
+                <line x1="12" y1="19" x2="12" y2="22"/>
+              </svg>
+            </button>
+
+            <!-- Sound Level Bar Indicator -->
+            <div class="flex flex-col gap-0.5 pr-2">
+              <span id="mic-label-text" class="text-xs font-medium text-ink">Mic active</span>
+              <div id="sound-meter" class="flex items-center gap-1 h-4">
+                <span class="w-1 rounded-full bg-brand meter-bar-1"></span>
+                <span class="w-1 rounded-full bg-brand meter-bar-2"></span>
+                <span class="w-1 rounded-full bg-brand meter-bar-3"></span>
+                <span class="w-1 rounded-full bg-brand meter-bar-4"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Switch Camera Button (52px neutral pill style, calm 1px border) -->
+          <button onclick="flipCameraPreview()" type="button" class="h-13 px-4 py-3 rounded-full bg-surface-alt hover:bg-neutral-200/60 border border-borderline text-ink flex items-center gap-2 text-xs font-medium transition-colors">
+            <svg class="w-4 h-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>
+              <path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/>
+              <circle cx="12" cy="12" r="3"/>
+              <path d="m18 22-3-3 3-3"/>
+              <path d="m6 2 3 3-3 3"/>
+            </svg>
+            <span>Switch camera</span>
+          </button>
+
+        </div>
+
+      </div>
+
+      <!-- RIGHT / BOTTOM COLUMN: Form Inputs, Device Selectors & Action CTA (5 cols on desktop) -->
+      <div class="md:col-span-5 flex flex-col gap-4">
+
+        <!-- User Information Card (Calm style: 1px border, 16px radius, strictly no hard shadow) -->
+        <div class="bg-surface-alt border border-borderline rounded-2xl p-5 flex flex-col gap-4">
+          
+          <!-- Name Input Field (52px pill, 2px orange border on focus) -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="user-name" class="text-xs font-medium text-ink">Your name in the booth</label>
+              <span class="text-[11px] text-ink-muted">Optional</span>
+            </div>
+            <div class="relative">
+              <input 
+                id="user-name" 
+                type="text" 
+                maxlength="20"
+                placeholder="Your name" 
+                oninput="updatePreviewName(this.value)"
+                class="w-full h-[52px] px-4 rounded-full bg-white border border-borderline text-sm text-ink placeholder:text-ink-muted/70 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all"
+              />
+            </div>
+            <p class="text-[11px] text-ink-muted mt-1.5 px-2">
+              Shown in the bottom corner of your video tile.
+            </p>
+          </div>
+
+          <!-- Collapsible "Camera & mic" row to pick devices (Desktop & power user) -->
+          <div class="border-t border-borderline pt-3">
+            <button 
+              type="button" 
+              onclick="toggleDevicePicker()"
+              class="w-full flex items-center justify-between text-left py-1 text-xs font-medium text-ink hover:text-brand transition-colors"
+            >
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <span>Camera &amp; mic settings</span>
+              </div>
+              <svg id="device-picker-arrow" class="w-4 h-4 text-ink-muted transform transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+
+            <!-- Collapsible selection menus -->
+            <div id="device-picker-body" class="hidden mt-3 space-y-2.5">
+              <div>
+                <label class="block text-[11px] text-ink-muted mb-1">Camera device</label>
+                <select class="w-full h-10 px-3 rounded-xl bg-white border border-borderline text-xs text-ink focus:outline-none focus:border-brand">
+                  <option selected>FaceTime HD Camera (Built-in)</option>
+                  <option>External USB Webcam</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[11px] text-ink-muted mb-1">Microphone device</label>
+                <select class="w-full h-10 px-3 rounded-xl bg-white border border-borderline text-xs text-ink focus:outline-none focus:border-brand">
+                  <option selected>Default Built-in Microphone</option>
+                  <option>AirPods Pro (Bluetooth)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Dynamic Action Card based on state -->
+        <div class="bg-surface border border-borderline rounded-2xl p-5 flex flex-col gap-3">
+
+          <!-- Descriptive status snippet -->
+          <div id="action-summary-container">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="w-2 h-2 rounded-full bg-status-good"></span>
+              <p class="text-xs font-medium text-ink">Ready when you are</p>
+            </div>
+            <p class="text-xs text-ink-muted">
+              Sam is waiting in the photobooth.
+            </p>
+          </div>
+
+          <!-- PRIMARY ACTION BUTTON (Calm: 52px pill, orange fill, ink text, NO hard offset shadow, NO thick outline per design tokens) -->
+          <button 
+            id="primary-action-btn"
+            type="button" 
+            onclick="handlePrimaryAction()"
+            class="w-full h-[52px] rounded-full bg-brand hover:bg-brand-hover text-ink font-semibold text-base transition-colors flex items-center justify-center gap-2"
+          >
+            <span>Enter booth</span>
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </button>
+
+          <!-- Secondary Calm Action / Return link -->
+          <button 
+            type="button" 
+            class="w-full h-10 rounded-full bg-transparent hover:bg-surface-alt text-ink-muted text-xs font-medium transition-colors"
+          >
+            Cancel and leave room
+          </button>
+
+        </div>
+
+        <!-- Privacy & Rules Note (Calm reassurance) -->
+        <div class="flex items-center justify-center gap-2 text-center text-[11px] text-ink-muted">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>No video is recorded. Only photos taken during countdown.</span>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Calm Minimal Footer -->
+  <footer class="w-full border-t border-borderline py-4 px-5 text-center text-xs text-ink-muted">
+    <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>No sign up. Shared photos are deleted after 24 hours.</p>
+      <div class="flex items-center gap-4 text-xs font-mono">
+        <span>snapduo.app/r/412</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Script for state transitions & interactivity -->
+  <script>
+    let currentScenario = 'ready';
+    let isMicMuted = false;
+
+    const stateConfig = {
+      'ready': {
+        name: 'Ready to enter',
+        heading: 'Check your camera and audio',
+        subheading: 'Take a moment to see how you look before joining your friend.',
+        summaryHtml: `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-status-good"></span>
+            <p class="text-xs font-medium text-ink">Ready when you are</p>
+          </div>
+          <p class="text-xs text-ink-muted">Your friend is waiting in the booth.</p>
+        `,
+        btnText: 'Enter booth',
+        videoLayerId: 'video-content-ready'
+      },
+      'permission': {
+        name: '1. Permission needed',
+        heading: 'Camera access needed',
+        subheading: 'We need your camera to take photos. Mic is optional.',
+        summaryHtml: `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-brand"></span>
+            <p class="text-xs font-medium text-ink">Permission required</p>
+          </div>
+          <p class="text-xs text-ink-muted">Tap below to allow camera & mic prompt.</p>
+        `,
+        btnText: 'Allow camera & mic',
+        videoLayerId: 'video-content-permission'
+      },
+      'camera-blocked': {
+        name: '2. Camera blocked',
+        heading: 'Camera is blocked',
+        subheading: 'Camera permission was denied in your browser settings.',
+        summaryHtml: `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-status-danger"></span>
+            <p class="text-xs font-medium text-ink">Camera blocked</p>
+          </div>
+          <p class="text-xs text-ink-muted">Enable access in browser settings, then tap try again.</p>
+        `,
+        btnText: 'Try again',
+        videoLayerId: 'video-content-camera-blocked'
+      },
+      'mic-blocked': {
+        name: '3. Mic blocked only',
+        heading: 'Microphone is blocked',
+        subheading: 'You can still join and hear your friend.',
+        summaryHtml: `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-status-warn"></span>
+            <p class="text-xs font-medium text-ink">Mic unavailable</p>
+          </div>
+          <p class="text-xs text-ink-muted">You can still enter and hear your friend fine.</p>
+        `,
+        btnText: 'Continue without mic',
+        videoLayerId: 'video-content-mic-blocked'
+      },
+      'camera-busy': {
+        name: '4. Camera busy',
+        heading: 'Camera is in use',
+        subheading: 'Your camera is being used by another app.',
+        summaryHtml: `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-status-warn"></span>
+            <p class="text-xs font-medium text-ink">Camera in use</p>
+          </div>
+          <p class="text-xs text-ink-muted">Close other video apps, then tap try again.</p>
+        `,
+        btnText: 'Try again',
+        videoLayerId: 'video-content-camera-busy'
+      }
+    };
+
+    function switchState(stateKey) {
+      currentScenario = stateKey;
+      const config = stateConfig[stateKey];
+
+      // Update indicator and tabs
+      document.getElementById('current-state-indicator').textContent = config.name;
+      document.querySelectorAll('.state-tab').forEach(tab => {
+        tab.className = 'state-tab px-3 py-1.5 rounded-full font-medium transition-all bg-white hover:bg-neutral-100 text-ink border border-borderline';
+      });
+      const activeTab = document.getElementById('btn-state-' + stateKey);
+      if (activeTab) {
+        activeTab.className = 'state-tab px-3 py-1.5 rounded-full font-medium transition-all bg-ink text-white';
+      }
+
+      // Update texts
+      document.getElementById('screen-heading').textContent = config.heading;
+      document.getElementById('screen-subheading').textContent = config.subheading;
+      document.getElementById('action-summary-container').innerHTML = config.summaryHtml;
+      
+      // Update primary button text
+      const btn = document.getElementById('primary-action-btn');
+      btn.querySelector('span').textContent = config.btnText;
+
+      // Update video layer visibility
+      document.querySelectorAll('.video-state-layer').forEach(layer => {
+        layer.classList.add('hidden');
+        layer.classList.remove('flex');
+      });
+      const currentLayer = document.getElementById(config.videoLayerId);
+      if (currentLayer) {
+        currentLayer.classList.remove('hidden');
+        currentLayer.classList.add('flex');
+      }
+
+      // Handle mic meter visibility on mic-blocked state
+      const meter = document.getElementById('sound-meter');
+      const micLabel = document.getElementById('mic-label-text');
+      if (stateKey === 'mic-blocked') {
+        meter.classList.add('opacity-30');
+        micLabel.textContent = 'Mic blocked';
+      } else if (!isMicMuted) {
+        meter.classList.remove('opacity-30');
+        micLabel.textContent = 'Mic active';
+      }
+    }
+
+    function toggleMic() {
+      if (currentScenario === 'mic-blocked') return;
+      isMicMuted = !isMicMuted;
+      const iconActive = document.getElementById('mic-icon-active');
+      const iconMuted = document.getElementById('mic-icon-muted');
+      const meter = document.getElementById('sound-meter');
+      const label = document.getElementById('mic-label-text');
+
+      if (isMicMuted) {
+        iconActive.classList.add('hidden');
+        iconMuted.classList.remove('hidden');
+        meter.classList.add('opacity-20');
+        label.textContent = 'Muted';
+      } else {
+        iconActive.classList.remove('hidden');
+        iconMuted.classList.add('hidden');
+        meter.classList.remove('opacity-20');
+        label.textContent = 'Mic active';
+      }
+    }
+
+    function flipCameraPreview() {
+      const preview = document.querySelector('.mirrored-preview');
+      if (preview) {
+        preview.classList.toggle('mirrored-preview');
+      }
+    }
+
+    function updatePreviewName(val) {
+      const label = document.getElementById('preview-display-name');
+      label.textContent = val.trim() ? val.trim() : 'You';
+    }
+
+    function toggleDevicePicker() {
+      const picker = document.getElementById('device-picker-body');
+      const arrow = document.getElementById('device-picker-arrow');
+      picker.classList.toggle('hidden');
+      arrow.classList.toggle('rotate-180');
+    }
+
+    function handlePrimaryAction() {
+      if (currentScenario === 'permission' || currentScenario === 'camera-blocked' || currentScenario === 'camera-busy') {
+        switchState('ready');
+      } else {
+        alert('Entering photobooth room #412...');
+      }
+    }
+  </script>
+</body>
+</html>
+

@@ -67,6 +67,13 @@ export const en = {
 		invalid: "That doesn't look like a Snapduo link. Paste the whole link your friend sent.",
 		submit: "Join room",
 	},
+	support: {
+		title: "Enjoying Snapduo?",
+		body: "Snapduo is free and has no ads. If you'd like to support its development, buy me a coffee via Saweria.",
+		cta: "Buy me a coffee",
+		aboutCta: "Buy me a coffee on Saweria",
+		newTab: "(opens in a new tab)",
+	},
 	about: {
 		title: "How Snapduo works",
 		intro: "A photo booth for two people in different places. No account, no app to install.",
@@ -200,6 +207,10 @@ export const en = {
 		stillHere: "{name} is still here",
 		downloadWhat: "Download",
 		printWhat: "Printing",
+		shareWhat: "Share links",
+		waitingSharp: "Waiting for {name}'s sharp photos…",
+		preparing: "Preparing…",
+		exportFailed: "Couldn't make the image. Try again.",
 	},
 	shared: {
 		title: "A photo strip from Snapduo",

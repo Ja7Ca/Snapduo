@@ -22,6 +22,7 @@ export function DebugPanel({ state }: { state: SessionState }) {
 		["path", st ? `${st.localCandidate} ↔ ${st.remoteCandidate} (${st.protocol})` : "–"],
 		["media", st ? `rtt ${st.rttMs ?? "–"} ms · ↑${st.sendKbps ?? "–"} ↓${st.recvKbps ?? "–"} kbps` : "–"],
 		["photos", String(state.photos.size)],
+		["sharp", `${[...state.photos.values()].filter((p) => p.sharp).length}/${state.photos.size}`],
 	];
 	return (
 		<aside

@@ -1,7 +1,7 @@
 "use client";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { FILTERS, type FilterId } from "@/features/frames/filters";
+import { FILTERS, filterCss, type FilterId } from "@/features/frames/filters";
 import { useI18n } from "@/i18n/client";
 
 interface FilterRowProps {
@@ -25,7 +25,7 @@ export function FilterRow({ value, onChange, previewSrc }: FilterRowProps) {
 				<ToggleGroupItem key={f.id} value={f.id} className="gap-2 pl-1.5" size="lg">
 					{previewSrc && (
 						// eslint-disable-next-line @next/next/no-img-element -- local preview
-						<img src={previewSrc} alt="" className="size-8 rounded-full object-cover" style={{ filter: f.css }} />
+						<img src={previewSrc} alt="" className="size-8 rounded-full object-cover" style={{ filter: filterCss(f.id) }} />
 					)}
 					{t.filters[f.id]}
 				</ToggleGroupItem>

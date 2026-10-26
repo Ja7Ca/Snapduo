@@ -176,7 +176,7 @@ function LiveRoom({ roomId }: { roomId: string }) {
 	return (
 		<>
 			{view.phase === "result" ? (
-				<ResultView state={view} dispatch={dispatch} onLeave={leave} friendStream={s.remoteStream} preview />
+				<ResultView state={view} dispatch={dispatch} onLeave={leave} friendStream={s.remoteStream} />
 			) : (
 				<BoothView
 					state={view}

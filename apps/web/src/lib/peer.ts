@@ -8,6 +8,8 @@ export interface PeerOptions {
 	sendSignal: (data: SignalData) => void;
 	onRemoteStream: (stream: MediaStream) => void;
 	onStateChange: (state: RTCPeerConnectionState) => void;
+	/** The photo data channel, once it exists (see addTracks). */
+	onChannel?: (channel: RTCDataChannel) => void;
 	/** Called for each local ICE candidate found (host / srflx / relay). */
 	onLocalCandidate?: (type: string) => void;
 	log: (line: string) => void;
@@ -89,12 +91,20 @@ export class Peer {
 		});
 	}
 
+	/**
+	 * Adds our camera tracks and the photo channel. The channel is
+	 * "negotiated" (same id on both sides, no extra handshake); creating it
+	 * here, together with the tracks, keeps it inside the first offer/answer
+	 * instead of triggering a second negotiation.
+	 */
 	private addTracks(): void {
 		if (this.tracksAdded) return;
 		this.tracksAdded = true;
 		for (const track of this.opts.localStream.getTracks()) {
 			this.pc.addTrack(track, this.opts.localStream);
 		}
+		const channel = this.pc.createDataChannel("photos", { negotiated: true, id: 0, ordered: true });
+		this.opts.onChannel?.(channel);
 	}
 
 	/** Camera switched: swap tracks in place, no renegotiation needed. */

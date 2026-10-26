@@ -12,7 +12,7 @@ import {
 	type Shot,
 } from "./room-state";
 
-const shot = (n: number): Shot => ({ self: `self-${n}`, friend: `friend-${n}` });
+const shot = (n: number): Shot => ({ left: `left-${n}`, right: `right-${n}` });
 const run = (s: RoomState, ...actions: RoomAction[]) => actions.reduce(roomReducer, s);
 
 const inBooth = () =>

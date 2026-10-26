@@ -1,4 +1,4 @@
-import { Link2, Sparkles, Users } from "lucide-react";
+import { Coffee, Link2, Sparkles, Users } from "lucide-react";
 import { PhotoStrip } from "@/components/photo/photo-strip";
 import { SiteFooter, SiteHeader } from "@/components/site/site-chrome";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { getFrame } from "@/features/frames/frames";
 import { mockPortrait, mockShots } from "@/features/mock/mock-photos";
 import { LOCALE_TAGS, localePath, type Dictionary, type Locale } from "@/i18n/config";
 import { getDictionary, resolveLocale } from "@/i18n/server";
-import { GITHUB_URL, SITE_URL } from "@/lib/site";
+import { GITHUB_URL, SITE_URL, SUPPORT_URL } from "@/lib/site";
 import { CreateRoomButton, JoinRoomDialog } from "./landing-actions";
 
 const STEP_ICONS = [Users, Link2, Sparkles];
@@ -143,6 +143,29 @@ export default async function LandingPage({ params }: PageProps<"/[lang]">) {
 							);
 						})}
 					</ol>
+				</section>
+
+				{/* Last on the page and calmer than "Create a room": it shouldn't compete with it. */}
+				<section
+					aria-labelledby="support-title"
+					className="mb-8 flex flex-col items-start gap-4 rounded-2xl bg-secondary p-6 sm:flex-row sm:items-center"
+				>
+					<span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-background">
+						<Coffee className="size-5" aria-hidden="true" />
+					</span>
+					<div className="flex-1">
+						<h2 id="support-title" className="text-lg font-bold">
+							{t.support.title}
+						</h2>
+						<p className="max-w-[60ch] text-sm text-muted-foreground">{t.support.body}</p>
+					</div>
+					<Button variant="inverted" size="sm" asChild>
+						<a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer">
+							<Coffee aria-hidden="true" />
+							{t.support.cta}
+							<span className="sr-only"> {t.support.newTab}</span>
+						</a>
+					</Button>
 				</section>
 			</main>
 

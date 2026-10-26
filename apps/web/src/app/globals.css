@@ -180,3 +180,25 @@
 		transition-duration: 1ms !important;
 	}
 }
+
+/*
+ * Printing the strip (features/frames/export-strip.ts): only the
+ * #print-strip image is printed, at its physical size (2×6 in, 4×6 in…).
+ */
+#print-strip {
+	display: none;
+}
+
+@media print {
+	@page {
+		margin: 0.4in;
+	}
+	body > :not(#print-strip) {
+		display: none !important;
+	}
+	#print-strip {
+		display: block;
+		margin: 0 auto;
+		max-width: none;
+	}
+}

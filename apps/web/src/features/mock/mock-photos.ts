@@ -22,7 +22,7 @@ function silhouette(seed: number, side: "left" | "right"): string {
 }
 
 export function mockShot(n: number, lowQuality = false): Shot {
-	return { self: silhouette(n * 2, "left"), friend: silhouette(n * 2 + 1, "right"), lowQuality };
+	return { left: silhouette(n * 2, "left"), right: silhouette(n * 2 + 1, "right"), lowQuality };
 }
 
 export function mockShots(count: number): Shot[] {

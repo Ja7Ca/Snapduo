@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useId, useState } from "react";
+import { useId, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,30 +21,33 @@ import { createRoomRequest } from "@/lib/signal-client";
 export function CreateRoomButton({ className }: { className?: string }) {
 	const router = useRouter();
 	const { t, locale } = useI18n();
-	const [busy, setBusy] = useState(false);
+	// A transition, not a "busy" flag: Next keeps this page's state when you
+	// come back from the room (Leave), and a flag left at "true" would lock
+	// the button. The transition ends on its own once navigation is done.
+	const [pending, startTransition] = useTransition();
 	return (
 		<Button
 			variant="playful"
 			className={className}
-			disabled={busy}
-			aria-busy={busy}
-			onClick={async () => {
-				setBusy(true);
-				try {
-					// The server makes the room: a mistyped link then shows
-					// "not found" instead of an empty booth nobody will join.
-					const id = await createRoomRequest();
-					// Room links have no language prefix; keep the one you're using.
-					rememberLocale(locale);
-					router.push(`/r/${id}`);
-				} catch (err) {
-					console.error(err);
-					toast.error(t.common.createFailed);
-					setBusy(false);
-				}
-			}}
+			disabled={pending}
+			aria-busy={pending}
+			onClick={() =>
+				startTransition(async () => {
+					try {
+						// The server makes the room: a mistyped link then shows
+						// "not found" instead of an empty booth nobody will join.
+						const id = await createRoomRequest();
+						// Room links have no language prefix; keep the one you're using.
+						rememberLocale(locale);
+						startTransition(() => router.push(`/r/${id}`));
+					} catch (err) {
+						console.error(err);
+						toast.error(t.common.createFailed);
+					}
+				})
+			}
 		>
-			{busy ? t.common.creatingRoom : t.common.createRoom}
+			{pending ? t.common.creatingRoom : t.common.createRoom}
 		</Button>
 	);
 }
@@ -54,11 +57,14 @@ export function JoinRoomDialog({ trigger }: { trigger: React.ReactNode }) {
 	const { t, locale } = useI18n();
 	const inputId = useId();
 	const errorId = useId();
+	const [open, setOpen] = useState(false);
 	const [value, setValue] = useState("");
 	const [error, setError] = useState("");
 
 	return (
-		<Dialog>
+		// Controlled and closed on submit: Next keeps this page's state, so an
+		// uncontrolled dialog would still be open when you come back (Leave).
+		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>{trigger}</DialogTrigger>
 			<DialogContent closeLabel={t.common.close}>
 				<form
@@ -71,6 +77,8 @@ export function JoinRoomDialog({ trigger }: { trigger: React.ReactNode }) {
 							return;
 						}
 						rememberLocale(locale);
+						setOpen(false);
+						setValue("");
 						router.push(`/r/${id}`);
 					}}
 				>

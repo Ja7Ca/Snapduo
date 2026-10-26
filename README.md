@@ -98,6 +98,8 @@ After deploying:
 - **The strip is drawn in the browser.** `features/frames/export-strip.ts` renders the frame at 300 dpi with the same geometry as the on-screen `PhotoStrip`; filters are applied as pixel maths (`color-matrix.ts`) so every browser gives the same result. Download saves a JPEG (share sheet on phones); Print prints just the strip at its real size.
 - **Video goes peer to peer.** One `RTCPeerConnection` per pair of seat "epochs": when either person reconnects, both sides start a fresh connection.
 
+- **Share links last exactly 24 hours.** "Share link" uploads your copy of the strip (with your filter) to the Worker. Each link is a `ShareObject` Durable Object that stores the file in 1 MB chunks and deletes itself with an alarm at 24 h; reads after the deadline are refused even if the alarm is late. Only someone with a seat in the room can upload (seat token), JPEG only, 5 MB max, 5 links per person. The photo never appears in link previews (chat apps would keep a copy past 24 h). Bytes sit behind a `BlobStore` interface so large files (video) can move to R2 later while the Durable Object keeps the 24-hour rule.
+
 Add `?debug=1` to a room link for connection details (socket, seat, clock offset, `host`/`srflx`/`relay` path, bitrate); `&relay=1` forces TURN.
 
 **Deploying.** Both apps deploy themselves from Git: a push to `main` builds the Worker (Cloudflare Workers Builds, root `apps/signal`) and the web app (Vercel, root `apps/web`). The two finish independently, so during a protocol change rooms show "reload" for a few minutes. If Workers Builds is stuck in its queue, deploy the Worker by hand from a clean, up-to-date `main` (`git status` empty):

@@ -5,6 +5,7 @@ import {
 	PONG_MESSAGE,
 	PROTOCOL_VERSION,
 	ROOM_CAPACITY,
+	SHARES_PER_SEAT,
 	STALE_MS,
 	applyIntent,
 	createRoom,
@@ -65,6 +66,21 @@ export class RoomObject extends DurableObject<Env> {
 		this.room = createRoom(Date.now());
 		await this.save();
 		return true;
+	}
+
+	/**
+	 * May the holder of this seat token make another share link? Counts
+	 * per seat, so one person can't fill the storage with uploads.
+	 */
+	async claimShare(token: string): Promise<"ok" | "unauthorized" | "limit"> {
+		const room = this.room;
+		const seat = room && typeof token === "string" ? room.seats.find((s) => s.token === token) : undefined;
+		if (!seat) return "unauthorized";
+		const key = `shares:${seat.peerId}`;
+		const used = (await this.ctx.storage.get<number>(key)) ?? 0;
+		if (used >= SHARES_PER_SEAT) return "limit";
+		await this.ctx.storage.put(key, used + 1);
+		return "ok";
 	}
 
 	async status(): Promise<RoomStatusResponse["status"]> {

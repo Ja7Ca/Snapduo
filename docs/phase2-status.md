@@ -65,6 +65,29 @@
 - Pemotongan foto ke slot pakai tengah (sama dengan pratinjau), bukan fokus 0,42.
 - Belum dites di iPhone: lembar share "Simpan ke Foto" dan cetak dari Safari. Tolong cek saat tes HP.
 
-## Berikutnya: Fase 4
+---
 
-Link berbagi 24 jam (R2): upload strip, halaman `/p/[id]`, hapus otomatis + tombol hapus sekarang.
+# Fase 4 — link berbagi 24 jam (27 Okt 2026)
+
+## Keputusan
+
+- **Penyimpanan di Durable Object, bukan R2**: tanpa kartu/setup bucket, dan alarm DO menghapus **tepat** 24 jam (lifecycle R2 per hari bisa molor sampai ±48 jam).
+- DO `ShareObject` (satu per link) selalu memegang aturan 24 jam. Byte file ada di balik `BlobStore` (`apps/signal/src/share.ts`); kalau nanti ada video, tinggal tambah `R2BlobStore` — alarm DO tetap yang menghapus, lifecycle R2 hanya cadangan.
+- File disimpan per potongan 1 MB (batas DO 2 MB per nilai tidak terasa). Batas unggah 5 MB, maks 5 link per orang per room.
+- Unggah wajib dari orang yang punya kursi di room (token kursi dicek oleh RoomObject). File harus JPEG.
+- Pratinjau link di WhatsApp dkk. **tidak** menampilkan foto (gambar pratinjau disimpan server mereka melewati 24 jam).
+
+## Sudah jalan & teruji
+
+- Worker: `POST /shares`, `GET /shares/:id`, `GET /shares/:id/image` (publik, CORS `*`, `noindex`), `DELETE /shares/:id` (token hapus). Lewat 24 jam → 410 lalu dihapus walau alarm telat.
+- Web: tombol "Bagikan link" mengunggah salinanmu (dengan filtermu), panel link dengan salin ke clipboard, hitung mundur asli, "Hapus sekarang". Link diingat di perangkat (localStorage) sampai kedaluwarsa.
+- Halaman `/p/[id]`: strip asli, sisa waktu, Unduh, "Bikin punyamu"; kedaluwarsa/dihapus → layar "sudah dihapus"; gagal muat → coba lagi.
+- Tes: worker 22/22 (7 baru: tolak tanpa kursi/situs lain/bukan JPEG/>5 MB, batas 5 link, file 2,5 MB utuh lewat 3 potongan, hapus pakai token, kedaluwarsa + alarm). Protocol 26/26, web 94/94. E2E **17/17** (bagikan → orang lain buka & unduh 1200×1800 → hapus → "sudah dihapus"). Halaman `/p` dicek di HP terang/gelap: aksesibilitas bersih.
+
+## Deploy
+
+Worker punya Durable Object baru (migration `v2`, binding `SHARE`) — tidak perlu setup apa pun di dashboard; deploy biasa dari `main` sudah membuatnya. Deploy worker dulu (atau bersamaan); web lama tetap jalan dengan worker baru.
+
+## Juga diperbaiki
+
+- Tombol "Buat room" terkunci ("Membuat room…") dan dialog "Gabung room" masih terbuka setelah keluar dari booth (state halaman disimpan Next.js).

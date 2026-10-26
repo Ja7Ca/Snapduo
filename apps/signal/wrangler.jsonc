@@ -13,6 +13,13 @@
 				"RoomObject"
 			],
 			"tag": "v1"
+		},
+		{
+			// Share links (Phase 4): one object per link, deleted after 24 h.
+			"new_sqlite_classes": [
+				"ShareObject"
+			],
+			"tag": "v2"
 		}
 	],
 	"durable_objects": {
@@ -20,6 +27,10 @@
 			{
 				"class_name": "RoomObject",
 				"name": "ROOM"
+			},
+			{
+				"class_name": "ShareObject",
+				"name": "SHARE"
 			}
 		]
 	},

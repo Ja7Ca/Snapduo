@@ -8,6 +8,8 @@ export interface PeerOptions {
 	sendSignal: (data: SignalData) => void;
 	onRemoteStream: (stream: MediaStream) => void;
 	onStateChange: (state: RTCPeerConnectionState) => void;
+	/** Called for each local ICE candidate found (host / srflx / relay). */
+	onLocalCandidate?: (type: string) => void;
 	log: (line: string) => void;
 }
 
@@ -17,7 +19,12 @@ const PREVIEW_MAX_BITRATE = 500_000;
 /**
  * One RTCPeerConnection using the "perfect negotiation" pattern
  * (https://w3c.github.io/webrtc-pc/#perfect-negotiation-example).
- * Both sides can add tracks and renegotiate at any time without glare.
+ *
+ * On top of that, the first offer comes from one side only: the impolite
+ * peer adds its tracks right away and offers; the polite peer adds its
+ * tracks when that offer arrives and answers. Without this both sides
+ * offered at once, and in Chrome the polite side's rollback sometimes left
+ * it without ICE candidates, so the call never connected.
  */
 export class Peer {
 	readonly pc: RTCPeerConnection;
@@ -26,6 +33,8 @@ export class Peer {
 	private settingRemoteAnswerPending = false;
 	/** Signals are processed strictly in order. */
 	private queue: Promise<void> = Promise.resolve();
+	/** Polite side: tracks are added when the first offer arrives. */
+	private tracksAdded = false;
 
 	constructor(private opts: PeerOptions) {
 		this.pc = new RTCPeerConnection({
@@ -33,9 +42,7 @@ export class Peer {
 			iceTransportPolicy: opts.forceRelay ? "relay" : "all",
 		});
 
-		for (const track of opts.localStream.getTracks()) {
-			this.pc.addTrack(track, opts.localStream);
-		}
+		if (!opts.polite) this.addTracks();
 
 		this.pc.onnegotiationneeded = async () => {
 			try {
@@ -50,6 +57,7 @@ export class Peer {
 		};
 
 		this.pc.onicecandidate = ({ candidate }) => {
+			if (candidate?.type) opts.onLocalCandidate?.(candidate.type);
 			opts.sendSignal({ kind: "candidate", candidate: candidate ? candidate.toJSON() : null });
 		};
 
@@ -66,8 +74,9 @@ export class Peer {
 
 		this.pc.oniceconnectionstatechange = () => {
 			opts.log(`ice: ${this.pc.iceConnectionState}`);
-			// Network changed (e.g. Wi-Fi → mobile data): try new paths.
-			if (this.pc.iceConnectionState === "failed") {
+			// Network changed (e.g. Wi-Fi → mobile data): try new paths. Only
+			// the offering side restarts, so both don't offer at once.
+			if (this.pc.iceConnectionState === "failed" && !opts.polite) {
 				opts.log("ice failed → restartIce()");
 				this.pc.restartIce();
 			}
@@ -80,7 +89,30 @@ export class Peer {
 		});
 	}
 
+	private addTracks(): void {
+		if (this.tracksAdded) return;
+		this.tracksAdded = true;
+		for (const track of this.opts.localStream.getTracks()) {
+			this.pc.addTrack(track, this.opts.localStream);
+		}
+	}
+
+	/** Camera switched: swap tracks in place, no renegotiation needed. */
+	async replaceStream(stream: MediaStream): Promise<void> {
+		this.opts.localStream = stream; // used if our tracks aren't added yet
+		for (const sender of this.pc.getSenders()) {
+			const kind = sender.track?.kind;
+			const next = kind ? stream.getTracks().find((t) => t.kind === kind) : undefined;
+			if (next && next !== sender.track) await sender.replaceTrack(next).catch(() => {});
+		}
+	}
+
 	close(): void {
+		this.pc.onnegotiationneeded = null;
+		this.pc.onicecandidate = null;
+		this.pc.ontrack = null;
+		this.pc.onconnectionstatechange = null;
+		this.pc.oniceconnectionstatechange = null;
 		this.pc.close();
 	}
 
@@ -103,6 +135,9 @@ export class Peer {
 			this.settingRemoteAnswerPending = false;
 
 			if (description.type === "offer") {
+				// Our tracks go into the existing transceivers, so the answer
+				// carries them without another round of negotiation.
+				this.addTracks();
 				await this.pc.setLocalDescription();
 				this.sendDescription();
 			}
@@ -147,10 +182,11 @@ export interface ConnectionStats {
 	recvKbps: number | null;
 }
 
-let previous: { at: number; sent: number; received: number } | null = null;
+const previousByPc = new WeakMap<RTCPeerConnection, { at: number; sent: number; received: number }>();
 
 /** Reads which path the connection actually uses (host / srflx / relay). */
 export async function readStats(pc: RTCPeerConnection): Promise<ConnectionStats | null> {
+	const previous = previousByPc.get(pc);
 	const report = await pc.getStats();
 	let pair: RTCIceCandidatePairStats | undefined;
 	let sent = 0;
@@ -181,7 +217,7 @@ export async function readStats(pc: RTCPeerConnection): Promise<ConnectionStats 
 		sendKbps = Math.round(((sent - previous.sent) * 8) / 1000 / seconds);
 		recvKbps = Math.round(((received - previous.received) * 8) / 1000 / seconds);
 	}
-	previous = { at: now, sent, received };
+	previousByPc.set(pc, { at: now, sent, received });
 
 	return {
 		localCandidate: local?.candidateType ?? "?",

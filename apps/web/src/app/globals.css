@@ -1,26 +1,182 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
+/* Tailwind's dark: variant follows our data-theme, not the OS. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Snapduo design tokens.
+ * Names follow shadcn's convention (background, primary, muted…) so the
+ * components in src/components/ui work unchanged; Snapduo-specific tokens
+ * (ink, video, flash, success, warning) are added alongside.
+ *
+ * Rule of thumb: orange is a fill, never a text colour on white
+ * (it fails contrast). Text on orange is always ink.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+	--background: #ffffff;
+	--foreground: #1f1a17;
+	--card: #ffffff;
+	--card-foreground: #1f1a17;
+	--popover: #ffffff;
+	--popover-foreground: #1f1a17;
+
+	--primary: #ff6b2c;
+	--primary-hover: #e5571a;
+	--primary-foreground: #1f1a17;
+
+	/* "surface alt": chips, inputs, icon buttons */
+	--secondary: #f5f3f0;
+	--secondary-foreground: #1f1a17;
+	--muted: #f5f3f0;
+	--muted-foreground: #6b625a;
+	--accent: #f5f3f0;
+	--accent-foreground: #1f1a17;
+
+	--destructive: #d7263d;
+	--destructive-foreground: #ffffff;
+	--success: #12a594;
+	--success-soft: #e3f5f2;
+	--success-text: #0b6b60;
+	--warning: #e8a317;
+	--warning-soft: #fdf2dc;
+	--warning-text: #7a5300;
+
+	--border: #ece8e3;
+	--input: #ece8e3;
+	/* Focus ring = ink: orange on white is only 2.8:1, below the 3:1 minimum. */
+	--ring: var(--ink);
+
+	/* Outline + hard-shadow colour for playful screens */
+	--ink: #1f1a17;
+	--video: #0e0c0a;
+	--flash: #ffc83d;
+
+	--radius: 1rem;
+}
+
+/*
+ * Dark palette. Applied via <html data-theme="dark">, set before first paint
+ * by THEME_INIT_SCRIPT (src/lib/theme.ts). Default is light; "system" is
+ * resolved to light/dark in JS so this block exists only once.
+ */
+:root[data-theme="dark"] {
+	--background: #15120f;
+	--foreground: #f5efe6;
+	--card: #1f1b17;
+	--card-foreground: #f5efe6;
+	--popover: #1f1b17;
+	--popover-foreground: #f5efe6;
+
+	--secondary: #2a2520;
+	--secondary-foreground: #f5efe6;
+	--muted: #2a2520;
+	--muted-foreground: #a89f94;
+	--accent: #2a2520;
+	--accent-foreground: #f5efe6;
+
+	--destructive: #f0566a;
+	--destructive-foreground: #15120f;
+	--success-soft: #12322d;
+	--success-text: #5fd6c4;
+	--warning-soft: #3a2c0d;
+	--warning-text: #f5c766;
+
+	--border: #3a332c;
+	--input: #3a332c;
+	--ink: #f5efe6;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-hover: var(--primary-hover);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-success: var(--success);
+	--color-success-soft: var(--success-soft);
+	--color-success-text: var(--success-text);
+	--color-warning: var(--warning);
+	--color-warning-soft: var(--warning-soft);
+	--color-warning-text: var(--warning-text);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-ink: var(--ink);
+	--color-video: var(--video);
+	--color-flash: var(--flash);
+
+	--font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+	--font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+	--font-mono: var(--font-mono), ui-monospace, monospace;
+
+	--radius-sm: calc(var(--radius) - 8px);
+	--radius-md: calc(var(--radius) - 4px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+
+	--shadow-hard: 4px 4px 0 0 var(--ink);
+	--shadow-sheet: 0 -4px 24px rgb(31 26 23 / 0.08);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	html {
+		-webkit-tap-highlight-color: transparent;
+	}
+	body {
+		@apply bg-background text-foreground font-sans antialiased;
+	}
+	h1,
+	h2,
+	h3 {
+		@apply font-display tracking-tight text-balance;
+	}
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+	/* Playful screens: 2px ink outline (no shadow). */
+	.outline-playful {
+		border: 2px solid var(--ink);
+	}
+	/* Only the single primary CTA on a playful screen gets this. */
+	.shadow-hard-press {
+		box-shadow: var(--shadow-hard);
+		transition:
+			transform 80ms ease-out,
+			box-shadow 80ms ease-out;
+	}
+	.shadow-hard-press:active {
+		transform: translate(4px, 4px);
+		box-shadow: 0 0 0 0 var(--ink);
+	}
+	/* Film strip sprocket holes, drawn with a repeating gradient. */
+	.sprockets {
+		background-image: radial-gradient(circle, var(--ink) 0 2.5px, transparent 3px);
+		background-size: 100% 18px;
+		background-repeat: repeat-y;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 1ms !important;
+		transition-duration: 1ms !important;
+	}
 }

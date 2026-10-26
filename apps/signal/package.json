@@ -7,11 +7,14 @@
     "dev": "wrangler dev",
     "start": "wrangler dev",
     "cf-typegen": "wrangler types",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p test",
+    "test": "vitest run"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.4.7",
     "@types/node": "^26.6.5",
     "typescript": "^5.5.2",
+    "vitest": "~5.0.5",
     "wrangler": "^4.152.0"
   },
   "dependencies": {

@@ -1,8 +1,11 @@
 import {
+	PING_INTERVAL_MS,
 	PING_MESSAGE,
 	PROTOCOL_VERSION,
 	type ClientMessage,
+	type CreateRoomResponse,
 	type IceServersResponse,
+	type RoomStatusResponse,
 	type ServerMessage,
 } from "@snapduo/protocol";
 
@@ -30,60 +33,135 @@ export async function fetchIceServers(): Promise<IceServersResponse> {
 	return res.json();
 }
 
-type Listener = (msg: ServerMessage) => void;
+export async function createRoomRequest(): Promise<string> {
+	const configError = signalConfigError();
+	if (configError) throw new Error(configError);
+	const res = await fetch(`${SIGNAL_URL}/rooms`, { method: "POST", cache: "no-store" });
+	if (!res.ok) throw new Error(`Create room failed: ${res.status}`);
+	return ((await res.json()) as CreateRoomResponse).roomId;
+}
+
+/** null when the server can't be reached (the socket will retry anyway). */
+export async function fetchRoomStatus(roomId: string): Promise<RoomStatusResponse["status"] | null> {
+	try {
+		const res = await fetch(`${SIGNAL_URL}/rooms/${roomId}`, { cache: "no-store" });
+		if (!res.ok) return null;
+		return ((await res.json()) as RoomStatusResponse).status;
+	} catch {
+		return null;
+	}
+}
+
+/** Nothing heard (not even a pong) for this long = the socket is dead. */
+const SILENCE_LIMIT_MS = PING_INTERVAL_MS * 2 + 5_000;
+
+interface SocketHandlers {
+	onOpen: () => void;
+	onMessage: (msg: ServerMessage) => void;
+	onClose: (code: number) => void;
+}
 
 /**
- * Thin WebSocket wrapper for the signaling server.
- * Phase 0: no automatic reconnect yet (that's Phase 2).
+ * One WebSocket to a room. Pings to keep it (and the server's view of it)
+ * alive, and closes itself when the line goes silent: phones often lose
+ * a connection without the socket ever reporting it.
+ *
+ * It doesn't reconnect by itself; RoomSession decides when to.
  */
-export class SignalClient {
+export class SignalSocket {
 	private ws: WebSocket | null = null;
-	private keepAlive: ReturnType<typeof setInterval> | null = null;
+	private timer: ReturnType<typeof setInterval> | null = null;
+	private lastHeard = 0;
 
 	constructor(
 		private roomId: string,
-		private onMessage: Listener,
-		private onClose: (code: number, reason: string) => void,
+		private handlers: SocketHandlers,
 	) {}
 
 	connect(): void {
+		this.close();
 		const wsUrl = SIGNAL_URL.replace(/^http/, "ws");
 		const ws = new WebSocket(`${wsUrl}/rooms/${this.roomId}/ws?v=${PROTOCOL_VERSION}`);
 		this.ws = ws;
+		this.lastHeard = Date.now();
 
-		ws.onmessage = (event) => {
-			try {
-				this.onMessage(JSON.parse(event.data));
-			} catch {
-				// Ignore malformed messages.
-			}
-		};
 		ws.onopen = () => {
-			// Some proxies drop idle sockets after ~60s.
-			this.keepAlive = setInterval(() => this.sendRaw(PING_MESSAGE), 25_000);
+			this.lastHeard = Date.now();
+			this.timer = setInterval(() => {
+				if (Date.now() - this.lastHeard > SILENCE_LIMIT_MS) {
+					// Dead line: closing triggers onclose → reconnect.
+					this.drop(ws, 4999);
+					return;
+				}
+				this.sendRaw(PING_MESSAGE);
+			}, PING_INTERVAL_MS);
+			this.handlers.onOpen();
+		};
+		ws.onmessage = (event) => {
+			this.lastHeard = Date.now();
+			let msg: ServerMessage;
+			try {
+				msg = JSON.parse(event.data);
+			} catch {
+				return;
+			}
+			if (msg.type !== "pong") this.handlers.onMessage(msg);
 		};
 		ws.onclose = (event) => {
-			this.stopKeepAlive();
-			this.onClose(event.code, event.reason);
+			if (this.ws !== ws) return; // an older socket
+			this.stopTimer();
+			this.ws = null;
+			this.handlers.onClose(event.code);
 		};
 	}
 
-	send(msg: ClientMessage): void {
-		this.sendRaw(JSON.stringify(msg));
+	get open(): boolean {
+		return this.ws?.readyState === WebSocket.OPEN;
 	}
 
+	send(msg: ClientMessage): boolean {
+		return this.sendRaw(JSON.stringify(msg));
+	}
+
+	/** Closes without reporting it (we chose to). */
 	close(): void {
-		this.stopKeepAlive();
-		this.ws?.close(1000, "bye");
+		const ws = this.ws;
 		this.ws = null;
+		this.stopTimer();
+		if (ws) {
+			ws.onclose = null;
+			ws.onmessage = null;
+			try {
+				ws.close(1000, "bye");
+			} catch {
+				// Not open yet.
+			}
+		}
 	}
 
-	private sendRaw(data: string): void {
-		if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(data);
+	private drop(ws: WebSocket, code: number): void {
+		try {
+			ws.close();
+		} catch {
+			// Ignore.
+		}
+		// Some browsers wait for the close handshake on a dead line; report now.
+		if (this.ws === ws) {
+			ws.onclose = null;
+			this.ws = null;
+			this.stopTimer();
+			this.handlers.onClose(code);
+		}
 	}
 
-	private stopKeepAlive(): void {
-		if (this.keepAlive) clearInterval(this.keepAlive);
-		this.keepAlive = null;
+	private sendRaw(data: string): boolean {
+		if (this.ws?.readyState !== WebSocket.OPEN) return false;
+		this.ws.send(data);
+		return true;
+	}
+
+	private stopTimer(): void {
+		if (this.timer) clearInterval(this.timer);
+		this.timer = null;
 	}
 }

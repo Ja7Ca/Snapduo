@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { newRoomId, parseRoomInput } from "./room-id";
+import { roomIdFromBytes } from "@snapduo/protocol";
+import { parseRoomInput } from "./room-id";
 
 describe("room ids", () => {
 	it("generates valid, distinct ids", () => {
-		const ids = new Set(Array.from({ length: 500 }, newRoomId));
+		const ids = new Set(Array.from({ length: 500 }, () => roomIdFromBytes(crypto.getRandomValues(new Uint8Array(12)))));
 		expect(ids.size).toBe(500);
 		for (const id of ids) expect(parseRoomInput(id)).toBe(id);
 	});

@@ -44,6 +44,8 @@ export interface BoothViewProps {
 	selfStream: MediaStream | null;
 	selfPlaceholder?: string;
 	friendPlaceholder?: string;
+	/** Friend's live video (audio plays elsewhere, so the tile stays muted). */
+	friendStream?: MediaStream | null;
 	micOn: boolean;
 	micBlocked: boolean;
 	canSwitchCamera: boolean;
@@ -174,7 +176,14 @@ export function BoothView(props: BoothViewProps) {
 						) : (
 							<VideoTile
 								name={friend.name}
-								placeholder={<TilePlaceholder src={props.friendPlaceholder} />}
+								stream={friend.present ? props.friendStream : null}
+								muted
+								placeholder={
+									<TilePlaceholder
+										src={props.friendPlaceholder}
+										label={friend.present ? t.booth.connectingVideo : undefined}
+									/>
+								}
 								micOff={!friend.micOn}
 								weakConnection={friend.weakConnection && friend.present}
 								dimmed={!friend.present}

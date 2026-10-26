@@ -1,11 +1,12 @@
 import { DEFAULT_FRAME_ID, getFrame, isSameShotCount } from "@/features/frames/frames";
 
 /**
- * Everything the room page needs to render, as a pure reducer.
+ * RoomState is what the booth and result views render.
  *
- * Phase 1 drives it with mock actions; Phase 2 feeds it events from the
- * signaling server and the peer connection. The UI never changes the
- * state directly, so every rule below is unit-tested in isolation.
+ * In a live room it is built from the server's snapshot (live-view.ts);
+ * the server decides the rules. The reducer below is a local stand-in
+ * with the same rules, used by /dev/states to show every screen without
+ * two people and a server.
  */
 
 export type Phase = "prejoin" | "waiting" | "booth" | "capturing" | "result";

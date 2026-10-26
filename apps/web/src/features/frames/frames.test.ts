@@ -1,5 +1,6 @@
+import { DEFAULT_FRAME_ID as SERVER_DEFAULT, FRAME_SHOTS } from "@snapduo/protocol";
 import { describe, expect, it } from "vitest";
-import { FRAMES, coverCrop, getFrame, isSameShotCount, splitSlot, type Rect } from "./frames";
+import { DEFAULT_FRAME_ID, FRAMES, coverCrop, getFrame, isSameShotCount, splitSlot, type Rect } from "./frames";
 
 const inside = (r: Rect, canvas: { w: number; h: number }) =>
 	r.x >= 0 && r.y >= 0 && r.x + r.w <= canvas.w && r.y + r.h <= canvas.h;
@@ -89,5 +90,12 @@ describe("coverCrop", () => {
 		const target = { w: 274, h: 368 };
 		const crop = coverCrop({ w: 640, h: 480 }, target);
 		expect(crop.w / crop.h).toBeCloseTo(target.w / target.h);
+	});
+});
+
+describe("frames vs the server", () => {
+	it("lists the same frames with the same photo counts as @snapduo/protocol", () => {
+		expect(Object.fromEntries(FRAMES.map((f) => [f.id, f.shots]))).toEqual(FRAME_SHOTS);
+		expect(DEFAULT_FRAME_ID).toBe(SERVER_DEFAULT);
 	});
 });

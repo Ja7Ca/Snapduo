@@ -8,6 +8,6 @@ export const PUBLIC_PATHS = [
 
 /** App screens that must stay out of search results, in every language. */
 export function disallowedPaths(): string[] {
-	const appPaths = ["/r/", "/p/", "/spike", "/dev/"];
+	const appPaths = ["/r/", "/p/", "/dev/"];
 	return [...new Set(LOCALES.flatMap((l) => appPaths.map((p) => localePath(l, p))))];
 }

@@ -34,7 +34,7 @@ describe("sitemap", () => {
 describe("robots", () => {
 	it("blocks rooms, shared photos and tools in both languages, allows the rest", () => {
 		expect(disallowedPaths().sort()).toEqual(
-			["/r/", "/p/", "/spike", "/dev/", "/en/r/", "/en/p/", "/en/spike", "/en/dev/"].sort(),
+			["/r/", "/p/", "/dev/", "/en/r/", "/en/p/", "/en/dev/"].sort(),
 		);
 		const r = robots();
 		expect(r.sitemap).toBe("https://snapduo.ja7ca.web.id/sitemap.xml");

@@ -42,11 +42,13 @@ interface MessageScreenProps {
 	title: string;
 	children: ReactNode;
 	cta: string;
+	/** Run this instead of going home. */
+	onCta?: () => void;
 	className?: string;
 }
 
 /** Playful full-screen message: room full, room not found, photo deleted. */
-export function MessageScreen({ art, title, children, cta, className }: MessageScreenProps) {
+export function MessageScreen({ art, title, children, cta, onCta, className }: MessageScreenProps) {
 	const Art = ART[art];
 	const { path } = useI18n();
 	return (
@@ -58,9 +60,15 @@ export function MessageScreen({ art, title, children, cta, className }: MessageS
 					<h1 className="text-[34px] leading-[1.08] font-extrabold sm:text-[40px]">{title}</h1>
 					<div className="mt-3 text-muted-foreground">{children}</div>
 				</div>
-				<Button variant="playful" asChild>
-					<Link href={path("/")}>{cta}</Link>
-				</Button>
+				{onCta ? (
+					<Button variant="playful" onClick={onCta}>
+						{cta}
+					</Button>
+				) : (
+					<Button variant="playful" asChild>
+						<Link href={path("/")}>{cta}</Link>
+					</Button>
+				)}
 			</main>
 			<SiteFooter />
 		</div>
@@ -90,6 +98,24 @@ export function PhotoGoneScreen() {
 	return (
 		<MessageScreen art="empty" title={t.messages.goneTitle} cta={t.messages.goneCta}>
 			{t.messages.goneBody}
+		</MessageScreen>
+	);
+}
+
+export function OtherTabScreen({ onUseHere }: { onUseHere: () => void }) {
+	const { t } = useI18n();
+	return (
+		<MessageScreen art="full" title={t.messages.otherTabTitle} cta={t.messages.otherTabCta} onCta={onUseHere}>
+			{t.messages.otherTabBody}
+		</MessageScreen>
+	);
+}
+
+export function UpdateScreen() {
+	const { t } = useI18n();
+	return (
+		<MessageScreen art="empty" title={t.messages.updateTitle} cta={t.messages.updateCta} onCta={() => window.location.reload()}>
+			{t.messages.updateBody}
 		</MessageScreen>
 	);
 }

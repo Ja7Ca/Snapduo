@@ -67,7 +67,7 @@ describe("decideRoute", () => {
 	it("serves Indonesian at unprefixed URLs and remembers it on marketing pages", () => {
 		expect(decideRoute("/", undefined, "en-US")).toEqual({ kind: "rewrite", pathname: "/id", locale: "id", rememberLocale: true });
 		expect(decideRoute("/about", undefined, null)).toEqual({ kind: "rewrite", pathname: "/id/about", locale: "id", rememberLocale: true });
-		expect(decideRoute("/spike", undefined, null)).toMatchObject({ pathname: "/id/spike", rememberLocale: false });
+		expect(decideRoute("/dev/states", undefined, null)).toMatchObject({ pathname: "/id/dev/states", rememberLocale: false });
 	});
 
 	it("never redirects the home page by browser language (Googlebot must see Indonesian)", () => {
@@ -78,7 +78,7 @@ describe("decideRoute", () => {
 	it("passes /en through and remembers English", () => {
 		expect(decideRoute("/en", undefined, null)).toEqual({ kind: "pass", locale: "en", rememberLocale: true });
 		expect(decideRoute("/en/about", undefined, null)).toEqual({ kind: "pass", locale: "en", rememberLocale: true });
-		expect(decideRoute("/en/spike", undefined, null)).toMatchObject({ kind: "pass", rememberLocale: false });
+		expect(decideRoute("/en/dev/states", undefined, null)).toMatchObject({ kind: "pass", rememberLocale: false });
 	});
 
 	it("redirects /id/... to the canonical URL", () => {

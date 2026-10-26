@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -13,29 +14,37 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { createdKey, newRoomId, parseRoomInput } from "@/features/room/room-id";
+import { parseRoomInput } from "@/features/room/room-id";
 import { rememberLocale, useI18n } from "@/i18n/client";
+import { createRoomRequest } from "@/lib/signal-client";
 
 export function CreateRoomButton({ className }: { className?: string }) {
 	const router = useRouter();
 	const { t, locale } = useI18n();
+	const [busy, setBusy] = useState(false);
 	return (
 		<Button
 			variant="playful"
 			className={className}
-			onClick={() => {
-				const id = newRoomId();
+			disabled={busy}
+			aria-busy={busy}
+			onClick={async () => {
+				setBusy(true);
 				try {
-					sessionStorage.setItem(createdKey(id), "1");
-				} catch {
-					// Private mode: still works, you just won't be marked as host.
+					// The server makes the room: a mistyped link then shows
+					// "not found" instead of an empty booth nobody will join.
+					const id = await createRoomRequest();
+					// Room links have no language prefix; keep the one you're using.
+					rememberLocale(locale);
+					router.push(`/r/${id}`);
+				} catch (err) {
+					console.error(err);
+					toast.error(t.common.createFailed);
+					setBusy(false);
 				}
-				// Room links have no language prefix; keep the one you're using.
-				rememberLocale(locale);
-				router.push(`/r/${id}`);
 			}}
 		>
-			{t.common.createRoom}
+			{busy ? t.common.creatingRoom : t.common.createRoom}
 		</Button>
 	);
 }

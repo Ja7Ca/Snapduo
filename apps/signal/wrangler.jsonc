@@ -45,8 +45,9 @@
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
 	"vars": {
-		// Comma-separated. Add your Vercel URL here before deploying.
-		"ALLOWED_ORIGINS": "http://localhost:3000,https://snapduo.vercel.app,https://snapduo.ja7ca.web.id"
+		// Comma-separated. "*" = one DNS label (used for Vercel branch previews,
+		// which only your Vercel account can create).
+		"ALLOWED_ORIGINS": "http://localhost:3000,https://snapduo.vercel.app,https://snapduo.ja7ca.web.id,https://snapduo-git-*-ja7ca.vercel.app"
 	},
 	/**
 	 * Secrets (not in this file): TURN_KEY_ID, TURN_KEY_API_TOKEN

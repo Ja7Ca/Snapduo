@@ -31,13 +31,22 @@ interface ResultViewProps {
 	dispatch: Dispatch<RoomAction>;
 	onLeave: () => void;
 	friendPlaceholder?: string;
+	friendStream?: MediaStream | null;
 	/** Phase 1: share/download aren't wired yet. */
 	preview?: boolean;
 	/** For screenshots of the "after sharing" state. */
 	initialShared?: boolean;
 }
 
-export function ResultView({ state, dispatch, onLeave, friendPlaceholder, preview, initialShared = false }: ResultViewProps) {
+export function ResultView({
+	state,
+	dispatch,
+	onLeave,
+	friendPlaceholder,
+	friendStream,
+	preview,
+	initialShared = false,
+}: ResultViewProps) {
 	const frame = getFrame(state.frameId);
 	const { t, fmt, locale } = useI18n();
 	const [filter, setFilter] = useState<FilterId>("normal");
@@ -200,6 +209,8 @@ export function ResultView({ state, dispatch, onLeave, friendPlaceholder, previe
 			{state.friend?.present && (
 				<VideoTile
 					name={state.friend.name}
+					stream={friendStream}
+					muted
 					placeholder={<TilePlaceholder src={friendPlaceholder} />}
 					micOff={!state.friend.micOn}
 					className="fixed right-4 bottom-4 z-20 hidden aspect-[3/4] w-32 shadow-sheet sm:block [&_figcaption]:bottom-1.5 [&_figcaption]:left-1.5 [&_figcaption]:px-2 [&_figcaption]:text-xs"

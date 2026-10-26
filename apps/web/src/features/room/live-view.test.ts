@@ -1,8 +1,7 @@
 import { CAPTURE_LEAD_MS, GRACE_MS, shutterAt, type RoomSnapshot, type SeatSnapshot } from "@snapduo/protocol";
 import { describe, expect, it } from "vitest";
 import { ClockSync } from "./clock";
-import { INITIAL_UI, MISSING_SHOT, liveRoomState, photoKey, routeAction, type LiveInput } from "./live-view";
-import type { Shot } from "./room-state";
+import { INITIAL_UI, MISSING_SHOT, liveRoomState, photoKey, routeAction, toShot, type LiveInput, type PhotoRecord } from "./live-view";
 
 const seat = (s: Partial<SeatSnapshot> & Pick<SeatSnapshot, "seat" | "peerId">): SeatSnapshot => ({
 	name: s.seat === "A" ? "Ana" : "Bo",
@@ -28,7 +27,7 @@ function room(patch: Partial<RoomSnapshot> = {}): RoomSnapshot {
 	};
 }
 
-const shot = (n: number): Shot => ({ self: `self${n}`, friend: `friend${n}` });
+const rec = (n: number, sharp = true): PhotoRecord => ({ mine: `mine${n}`, theirs: `theirs${n}`, sharp, gaveUp: false });
 
 function input(patch: Partial<LiveInput> = {}): LiveInput {
 	return {
@@ -76,8 +75,8 @@ describe("liveRoomState", () => {
 
 	it("shows this browser's photo for a slot, or a grey placeholder if it doesn't have it", () => {
 		const r = room({ slots: ["c1", "c1", null, null] });
-		const v = liveRoomState(input({ room: r, photos: new Map([[photoKey("c1", 0), shot(0)]]) }));
-		expect(v.shots).toEqual([shot(0), MISSING_SHOT, null, null]);
+		const v = liveRoomState(input({ room: r, photos: new Map([[photoKey("c1", 0), rec(0)]]) }));
+		expect(v.shots).toEqual([{ left: "mine0", right: "theirs0", lowQuality: false, pending: false }, MISSING_SHOT, null, null]);
 	});
 
 	it("follows a capture on the shared clock, showing each photo once its shutter fired", () => {
@@ -89,10 +88,10 @@ describe("liveRoomState", () => {
 		const start = liveRoomState(input({ room: r, offset, now: at(10_000) }));
 		expect(start.capture).toMatchObject({ index: 0, countdown: 3, startedBy: "friend" });
 
-		const photos = new Map([[photoKey("c2", 0), shot(9)]]);
+		const photos = new Map([[photoKey("c2", 0), rec(9)]]);
 		const afterFirst = liveRoomState(input({ room: r, offset, photos, now: at(shutterAt(c, 0) + 10) }));
 		expect(afterFirst.capture?.countdown).toBe(0);
-		expect(afterFirst.shots[0]).toEqual(shot(9));
+		expect(afterFirst.shots[0]).toMatchObject({ left: "mine9", right: "theirs9" });
 		expect(afterFirst.shots[1]).toBeNull();
 	});
 
@@ -106,6 +105,22 @@ describe("liveRoomState", () => {
 		const v = liveRoomState(input({ room: room({ frameChangedBy: "pb", finishedBy: "pa" }) }));
 		expect(v.frameChangedBy).toBe("friend");
 		expect(v.finishedBy).toBe("self");
+	});
+});
+
+describe("photo halves", () => {
+	it("puts the creator on the left on both phones", () => {
+		const r = room({ slots: ["c1", null, null, null] });
+		const photos = new Map([[photoKey("c1", 0), rec(1)]]);
+		expect(liveRoomState(input({ room: r, photos, selfId: "pa" })).shots[0]).toMatchObject({ left: "mine1", right: "theirs1" });
+		// Same slot seen by the friend (seat B): their own photo goes right.
+		expect(liveRoomState(input({ room: r, photos, selfId: "pb" })).shots[0]).toMatchObject({ left: "theirs1", right: "mine1" });
+	});
+
+	it("is pending while the sharp photo travels, low quality once we gave up", () => {
+		expect(toShot({ ...rec(1, false) }, true)).toMatchObject({ pending: true, lowQuality: false });
+		expect(toShot({ ...rec(1, false), gaveUp: true }, true)).toMatchObject({ pending: false, lowQuality: true });
+		expect(toShot(rec(1), true)).toMatchObject({ pending: false, lowQuality: false });
 	});
 });
 

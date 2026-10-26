@@ -15,11 +15,17 @@ export type Who = "self" | "friend";
 export type TimerSeconds = 3 | 5 | 10;
 
 export interface Shot {
-	/** Object URL or data URL of each person's photo for this slot. */
-	self: string;
-	friend: string;
+	/**
+	 * Object URL or data URL of each half of this slot. Left is always the
+	 * room creator, right the friend, so the strip is the same on both
+	 * phones.
+	 */
+	left: string;
+	right: string;
 	/** Friend's full-res photo didn't arrive; a frame from the video was used. */
 	lowQuality?: boolean;
+	/** Friend's full-res photo is still on its way. */
+	pending?: boolean;
 }
 
 export interface Friend {

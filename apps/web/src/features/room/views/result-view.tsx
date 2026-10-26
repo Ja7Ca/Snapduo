@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import type { FilterId } from "@/features/frames/filters";
 import { getFrame, printLabel } from "@/features/frames/frames";
+import { printStrip, renderStrip, saveStrip, stripFileName, stripToBlob } from "@/features/frames/export-strip";
 import type { RoomAction, RoomState } from "@/features/room/room-state";
 import { frameName } from "@/features/frames/frame-name";
 import { useI18n } from "@/i18n/client";
@@ -32,7 +33,7 @@ interface ResultViewProps {
 	onLeave: () => void;
 	friendPlaceholder?: string;
 	friendStream?: MediaStream | null;
-	/** Phase 1: share/download aren't wired yet. */
+	/** /dev/states mock: buttons only show a "comes later" note. */
 	preview?: boolean;
 	/** For screenshots of the "after sharing" state. */
 	initialShared?: boolean;
@@ -58,6 +59,24 @@ export function ResultView({
 	const landscape = frame.canvas.w > frame.canvas.h;
 
 	const notWired = (what: string) => toast(fmt(t.common.later, { what }), { description: t.common.laterBody });
+	const [busy, setBusy] = useState<"download" | "print" | null>(null);
+	// Download/print wait for the friend's sharp photos (or the time-out).
+	const waiting = !preview && state.shots.some((s) => s?.pending);
+
+	const exportStrip = async (kind: "download" | "print") => {
+		if (preview) return notWired(kind === "download" ? t.result.downloadWhat : t.result.printWhat);
+		setBusy(kind);
+		try {
+			const blob = await stripToBlob(await renderStrip({ frame, shots: state.shots, filter, date, dateLocale: locale }));
+			if (kind === "download") await saveStrip(blob, stripFileName(date));
+			else await printStrip(blob, frame);
+		} catch (err) {
+			console.error(err);
+			toast.error(t.result.exportFailed);
+		} finally {
+			setBusy(null);
+		}
+	};
 
 	return (
 		<div className="flex min-h-dvh flex-col">
@@ -112,21 +131,37 @@ export function ResultView({
 
 					<div className="flex flex-col gap-2">
 						<h2 className="font-sans text-sm font-medium">{t.result.filter}</h2>
-						<FilterRow value={filter} onChange={setFilter} previewSrc={firstShot?.self} />
+						<FilterRow value={filter} onChange={setFilter} previewSrc={firstShot?.left} />
 						<p className="text-xs text-muted-foreground">{t.result.filterNote}</p>
 					</div>
 
+					{waiting && state.friend && (
+						<p role="status" className="-mb-4 animate-pulse text-sm text-muted-foreground">
+							{fmt(t.result.waitingSharp, { name: state.friend.name })}
+						</p>
+					)}
 					<div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-						<Button variant="playful" onClick={() => (preview ? notWired(t.result.downloadWhat) : undefined)}>
+						<Button
+							variant="playful"
+							onClick={() => void exportStrip("download")}
+							disabled={waiting || busy !== null}
+							aria-busy={busy === "download"}
+						>
 							<Download aria-hidden="true" />
-							{t.common.download}
+							{busy === "download" ? t.result.preparing : t.common.download}
 						</Button>
-						<Button variant="secondary-playful" onClick={() => (preview ? notWired(t.result.printWhat) : window.print())}>
+						<Button
+							variant="secondary-playful"
+							onClick={() => void exportStrip("print")}
+							disabled={waiting || busy !== null}
+							aria-busy={busy === "print"}
+						>
 							<Printer aria-hidden="true" />
-							{t.result.print}
+							{busy === "print" ? t.result.preparing : t.result.print}
 						</Button>
 						{!shared && (
-							<Button variant="secondary-playful" onClick={() => setShared(true)}>
+							// Share links (R2, 24 h) come in Phase 4.
+							<Button variant="secondary-playful" onClick={() => (preview ? setShared(true) : notWired(t.result.shareWhat))}>
 								<Link2 aria-hidden="true" />
 								{t.result.share}
 							</Button>

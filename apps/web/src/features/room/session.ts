@@ -14,9 +14,9 @@ import { Peer, readStats, type ConnectionStats } from "@/lib/peer";
 import { SignalSocket, fetchIceServers } from "@/lib/signal-client";
 import { ClockSync } from "./clock";
 import { FrameGrabber } from "./frame-grabber";
-import { MISSING_SHOT, photoKey } from "./live-view";
+import { MISSING_PHOTO_URL, photoKey, type PhotoRecord } from "./live-view";
+import { PhotoChannel } from "./photo-channel";
 import { deletePhotos, loadPhotos, savePhoto } from "./photo-store";
-import type { Shot } from "./room-state";
 
 export type SessionStatus = "idle" | "connecting" | "open" | "reconnecting" | "failed";
 export type SessionFailure = ErrorCode | "left";
@@ -29,7 +29,7 @@ export interface SessionState {
 	room: RoomSnapshot | null;
 	/** Clock offset (server − local), for countdowns. */
 	offset: number;
-	photos: ReadonlyMap<string, Shot>;
+	photos: ReadonlyMap<string, PhotoRecord>;
 	remoteStream: MediaStream | null;
 	peerState: RTCPeerConnectionState | "none";
 	weakConnection: boolean;
@@ -68,6 +68,8 @@ const RETRY_DELAYS_MS = [300, 1000, 2000, 4000];
 const RETRY_MAX_MS = 5000;
 const STATS_EVERY_MS = 3000;
 const WEAK_RTT_MS = 600;
+/** How long to wait for the friend's sharp photo before using the video frame. */
+export const SHARP_PHOTO_WAIT_MS = 15_000;
 
 interface SeatMemory {
 	token: string;
@@ -108,6 +110,11 @@ export class RoomSession {
 	 * lose the friend's offer and stall both sides.
 	 */
 	private earlySignals: { key: string; data: SignalData }[] = [];
+	private photoChannel: PhotoChannel | null = null;
+	/** Our own photo files, kept to send (or resend) to the friend. */
+	private mine = new Map<string, Blob>();
+	/** Their photo files we hold (video frame or sharp), to re-save with ours. */
+	private theirs = new Map<string, Blob>();
 	private iceServers: RTCIceServer[] | null = null;
 	private localStream: MediaStream | null = null;
 	private profile = { name: "", micOn: true };
@@ -343,15 +350,15 @@ export class RoomSession {
 		this.syncPeer();
 	}
 
+	private dlog(line: string): void {
+		if (this.options.debug) console.info(`[session] ${line}`);
+	}
+
 	/**
 	 * One peer connection per pair of seat epochs. If either side
 	 * reconnects, both drop the old one and start fresh, so nobody keeps
 	 * talking to a connection the other side threw away.
 	 */
-	private dlog(line: string): void {
-		if (this.options.debug) console.info(`[session] ${line}`);
-	}
-
 	private syncPeer(): void {
 		const { room, selfId } = this.state;
 		const friend = room?.seats.find((s) => s.peerId !== selfId);
@@ -374,6 +381,14 @@ export class RoomSession {
 			onRemoteStream: (stream) => this.setRemote(stream),
 			onStateChange: (peerState) => {
 				this.set({ peerState, weakConnection: peerState === "disconnected" });
+			},
+			onChannel: (channel) => {
+				this.photoChannel = new PhotoChannel(channel, {
+					have: () => [...this.state.photos].filter(([, r]) => r.sharp).map(([k]) => k),
+					onPeerHave: (keys) => this.sendMissing(keys),
+					onPhoto: (photoKey, blob) => this.receiveSharp(photoKey, blob),
+					log: (line) => this.dlog(`photos: ${line}`),
+				});
 			},
 			log: (line) => {
 				if (this.options.debug) console.info(`[peer ${key}] ${line}`);
@@ -411,6 +426,7 @@ export class RoomSession {
 		this.statsTimer = null;
 		this.peer?.close();
 		this.peer = null;
+		this.photoChannel = null;
 		this.peerKey = null;
 		this.grabber?.setRemote(null);
 		if (this.audio) this.audio.srcObject = null;
@@ -450,30 +466,77 @@ export class RoomSession {
 		const { self, friend } = await this.grabber.grab();
 		if (!self) return; // camera not running: the slot shows as missing
 		const key = photoKey(captureId, slot);
-		this.addPhoto(key, self, friend);
-		void savePhoto(this.roomId, key, self, friend);
+		this.mine.set(key, self);
+		// Their sharp photo may have beaten our own shutter by a few ms: keep it.
+		const sharp = this.state.photos.get(key)?.sharp ? (this.theirs.get(key) ?? null) : null;
+		const theirs = sharp ?? friend;
+		if (theirs) this.theirs.set(key, theirs);
+		this.putRecord(key, { mine: self, theirs, sharp: !!sharp, gaveUp: false });
+		void savePhoto(this.roomId, key, { mine: self, theirs, sharp: !!sharp });
+		// Our sharp photo goes to the friend; theirs comes to us the same way.
+		this.photoChannel?.send(key, self);
+		setTimeout(() => this.giveUpWaiting(key), SHARP_PHOTO_WAIT_MS);
 	}
 
 	/* ---------- photos ---------- */
 
-	private addPhoto(key: string, self: Blob, friend: Blob | null): void {
+	/** Replaces a record (and frees the old object URLs). */
+	private putRecord(key: string, p: { mine: Blob | null; theirs: Blob | null; sharp: boolean; gaveUp: boolean }): void {
 		const photos = new Map(this.state.photos);
 		const old = photos.get(key);
 		if (old) revoke(old);
-		// No friend frame (their video hadn't started): a grey half, flagged.
 		photos.set(key, {
-			self: URL.createObjectURL(self),
-			friend: friend ? URL.createObjectURL(friend) : MISSING_SHOT.friend,
-			lowQuality: !friend,
+			mine: p.mine ? URL.createObjectURL(p.mine) : MISSING_PHOTO_URL,
+			// No friend frame (their video hadn't started): grey until the sharp one arrives.
+			theirs: p.theirs ? URL.createObjectURL(p.theirs) : MISSING_PHOTO_URL,
+			sharp: p.sharp,
+			gaveUp: p.gaveUp,
 		});
 		this.set({ photos });
+	}
+
+	/** The friend's own camera photo arrived. */
+	private receiveSharp(key: string, blob: Blob): void {
+		if (!this.isCurrent(key)) return;
+		const mine = this.mine.get(key) ?? null;
+		this.theirs.set(key, blob);
+		this.putRecord(key, { mine, theirs: blob, sharp: true, gaveUp: false });
+		void savePhoto(this.roomId, key, { mine, theirs: blob, sharp: true });
+	}
+
+	private giveUpWaiting(key: string): void {
+		const rec = this.state.photos.get(key);
+		if (!rec || rec.sharp || rec.gaveUp) return;
+		const photos = new Map(this.state.photos);
+		photos.set(key, { ...rec, gaveUp: true });
+		this.set({ photos });
+	}
+
+	/** The friend told us what they have: send them the rest of ours. */
+	private sendMissing(theirKeys: string[]): void {
+		const have = new Set(theirKeys);
+		for (const [key, blob] of this.mine) {
+			if (!have.has(key) && this.isCurrent(key)) this.photoChannel?.send(key, blob);
+		}
+	}
+
+	/** Is this photo still used by a slot (or the capture in progress)? */
+	private isCurrent(key: string): boolean {
+		const room = this.state.room;
+		if (!room) return false;
+		if (room.slots.some((id, slot) => id && photoKey(id, slot) === key)) return true;
+		return !!room.capture?.queue.some((slot) => photoKey(room.capture!.id, slot) === key);
 	}
 
 	private async loadPhotos(): Promise<void> {
 		const stored = await loadPhotos(this.roomId);
 		this.photosLoaded = true;
 		for (const p of stored) {
-			if (!this.state.photos.has(p.key)) this.addPhoto(p.key, p.self, p.friend);
+			if (this.state.photos.has(p.key)) continue;
+			if (p.mine) this.mine.set(p.key, p.mine);
+			if (p.theirs) this.theirs.set(p.key, p.theirs);
+			// After a reload we don't wait again; a sharp photo can still arrive.
+			this.putRecord(p.key, { mine: p.mine, theirs: p.theirs, sharp: p.sharp, gaveUp: !p.sharp });
 		}
 		this.prunePhotos();
 	}
@@ -491,13 +554,15 @@ export class RoomSession {
 		for (const k of drop) {
 			revoke(photos.get(k)!);
 			photos.delete(k);
+			this.mine.delete(k);
+			this.theirs.delete(k);
 		}
 		this.set({ photos });
 		void deletePhotos(this.roomId, drop);
 	}
 }
 
-function revoke(shot: Shot): void {
-	if (shot.self.startsWith("blob:")) URL.revokeObjectURL(shot.self);
-	if (shot.friend.startsWith("blob:")) URL.revokeObjectURL(shot.friend);
+function revoke(rec: PhotoRecord): void {
+	if (rec.mine.startsWith("blob:")) URL.revokeObjectURL(rec.mine);
+	if (rec.theirs.startsWith("blob:")) URL.revokeObjectURL(rec.theirs);
 }

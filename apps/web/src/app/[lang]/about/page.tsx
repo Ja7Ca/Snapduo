@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LOCALE_TAGS, localePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/seo";
 import { getDictionary, resolveLocale } from "@/i18n/server";
-import { GITHUB_URL } from "@/lib/site";
+import { GITHUB_URL, SUPPORT_URL } from "@/lib/site";
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/about">): Promise<Metadata> {
 	const locale = await resolveLocale(params);
@@ -66,11 +66,20 @@ export default async function AboutPage({ params }: PageProps<"/[lang]/about">) 
 						{t.about.devTitle}
 					</h2>
 					<p className="mt-2 max-w-[60ch] text-muted-foreground">{t.about.devBody}</p>
-					<Button variant="secondary-playful" size="sm" className="mt-4" asChild>
-						<a href={GITHUB_URL} rel="noreferrer" target="_blank">
-							{t.about.github}
-						</a>
-					</Button>
+					<div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+						<Button variant="secondary-playful" size="sm" asChild>
+							<a href={GITHUB_URL} rel="noreferrer" target="_blank">
+								{t.about.github}
+								<span className="sr-only"> {t.support.newTab}</span>
+							</a>
+						</Button>
+						<Button variant="link" size="inline" asChild>
+							<a href={SUPPORT_URL} rel="noopener noreferrer" target="_blank">
+								{t.support.aboutCta}
+								<span className="sr-only"> {t.support.newTab}</span>
+							</a>
+						</Button>
+					</div>
 				</section>
 			</main>
 			<SiteFooter languageSwitch />

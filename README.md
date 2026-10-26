@@ -94,19 +94,20 @@ After deploying:
 - **The server decides.** Each room is a Durable Object holding the room state (frame, timer, photo slots, who is in which seat) in storage. Browsers send requests ("change frame", "start"), the object checks them against `room-core` in `packages/protocol` and sends the new snapshot to both. Two people pressing at once can't start two captures.
 - **Seats survive reloads.** Joining returns a secret seat token kept in `sessionStorage`. Reload, a phone killing the tab, or a dropped network: the seat is held for 2 minutes and the token gets it back. Opening the same seat in a second tab moves it there ("Use it here" moves it back). **Leave** frees the seat at once.
 - **Synced countdown.** The server picks the start time on its own clock; each browser measures its clock offset (`features/room/clock.ts`) and fires the shutter at the same moment.
-- **Photos stay on the device.** They are kept in IndexedDB per room (deleted after 24 h), so a reload doesn't lose them. Your half comes from your camera at full resolution; your friend's half is a frame of their live video until Phase 3 sends their own sharp photo.
+- **Photos stay on the devices.** Each phone takes its own camera photo at the shutter and sends it to the other over the WebRTC data channel (`features/room/photo-channel.ts`); until it arrives, a frame of the live video stands in. Everything is kept in IndexedDB per room (deleted after 24 h), so a reload doesn't lose them. The room creator is always the left half, so both strips are identical.
+- **The strip is drawn in the browser.** `features/frames/export-strip.ts` renders the frame at 300 dpi with the same geometry as the on-screen `PhotoStrip`; filters are applied as pixel maths (`color-matrix.ts`) so every browser gives the same result. Download saves a JPEG (share sheet on phones); Print prints just the strip at its real size.
 - **Video goes peer to peer.** One `RTCPeerConnection` per pair of seat "epochs": when either person reconnects, both sides start a fresh connection.
 
 Add `?debug=1` to a room link for connection details (socket, seat, clock offset, `host`/`srflx`/`relay` path, bitrate); `&relay=1` forces TURN.
 
-Testing on phones needs HTTPS, so use the deployed site + deployed Worker:
+**Deploying.** Both apps deploy themselves from Git: a push to `main` builds the Worker (Cloudflare Workers Builds, root `apps/signal`) and the web app (Vercel, root `apps/web`). The two finish independently, so during a protocol change rooms show "reload" for a few minutes. If Workers Builds is stuck in its queue, deploy the Worker by hand from a clean, up-to-date `main` (`git status` empty):
 
 ```bash
-# once
-pnpm --filter @snapduo/signal exec wrangler login
-pnpm --filter @snapduo/signal exec wrangler secret put TURN_KEY_ID
-pnpm --filter @snapduo/signal exec wrangler secret put TURN_KEY_API_TOKEN
+pnpm --filter @snapduo/signal exec wrangler login   # once
+pnpm --filter @snapduo/signal exec wrangler deploy
 ```
+
+Secrets (set once, kept across deploys): `wrangler secret put TURN_KEY_ID` and `TURN_KEY_API_TOKEN`. Check `/health` shows the expected `protocol` after a deploy. Worker preview URLs don't work with Durable Objects, so Vercel previews talk to the production Worker.
 
 TURN locally: copy `apps/signal/.dev.vars.example` to `apps/signal/.dev.vars` and fill it in (without it, STUN only).
 

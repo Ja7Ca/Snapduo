@@ -5,9 +5,9 @@
  * synchronous drawImage (no waiting for a fresh element to start, which
  * can take 100+ ms and would make the two people's photos drift apart).
  *
- * Phase 2: your half comes from your camera at full resolution; your
- * friend's half is a frame of the live video. Phase 3 swaps that for
- * their own full-resolution photo sent over a data channel.
+ * Your half comes from your camera. Your friend's half starts as a frame
+ * of their live video (blurry, but instant); their own camera photo then
+ * arrives over the data channel (photo-channel.ts) and replaces it.
  */
 export class FrameGrabber {
 	private local = makeVideo();
@@ -51,10 +51,16 @@ function attach(video: HTMLVideoElement, stream: MediaStream | null): void {
 	if (stream) void video.play().catch(() => {});
 }
 
+/** Long edge of a saved photo: plenty for a 300 dpi print half (~520×750). */
+const MAX_EDGE = 1280;
+
 function drawNow(video: HTMLVideoElement): HTMLCanvasElement | null {
-	const w = video.videoWidth;
-	const h = video.videoHeight;
-	if (!video.srcObject || !w || !h) return null;
+	const vw = video.videoWidth;
+	const vh = video.videoHeight;
+	if (!video.srcObject || !vw || !vh) return null;
+	const scale = Math.min(1, MAX_EDGE / Math.max(vw, vh));
+	const w = Math.round(vw * scale);
+	const h = Math.round(vh * scale);
 	const canvas = document.createElement("canvas");
 	canvas.width = w;
 	canvas.height = h;
@@ -62,6 +68,7 @@ function drawNow(video: HTMLVideoElement): HTMLCanvasElement | null {
 	if (!ctx) return null;
 	ctx.translate(w, 0);
 	ctx.scale(-1, 1);
+	ctx.imageSmoothingQuality = "high";
 	ctx.drawImage(video, 0, 0, w, h);
 	return canvas;
 }

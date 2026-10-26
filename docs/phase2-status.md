@@ -43,3 +43,28 @@
 - Foto teman sekarang = frame dari video live (resolusi preview). Fase 3: kirim foto tajam via DataChannel.
 - Di slot, kiri selalu "saya". Untuk strip final, urutkan per seat (A kiri, B kanan) supaya kedua HP sama.
 - `lowQuality` hanya dipasang kalau frame video teman tidak ada sama sekali.
+
+---
+
+# Fase 3 — foto tajam, strip final, unduh & cetak (26 Okt 2026)
+
+## Sudah jalan & teruji
+
+- **Foto tajam via DataChannel** (`features/room/photo-channel.ts`): tiap HP mengirim foto kameranya sendiri (maks 1280 px, potongan 16 KB, ada backpressure, batas 3 MB). Saat channel terbuka kedua sisi bertukar daftar "sudah punya", jadi kiriman yang terputus oleh reconnect dikirim ulang. Channel dibuat bersama track kamera (tanpa negosiasi tambahan, tidak memicu glare).
+- Slot awalnya pakai frame video teman (langsung tampil), lalu naik kelas jadi foto tajam. Kalau 15 dtk tidak datang → tetap frame video + tanda "kualitas lebih rendah". Semua tersimpan di IndexedDB.
+- **Kiri = pembuat room, kanan = teman** di kedua HP (`Shot.left/right`), jadi strip identik.
+- **Filter dihitung manual** (`features/frames/color-matrix.ts`, rumus spesifikasi Filter Effects), satu daftar operasi untuk pratinjau CSS dan unduhan → sama di semua browser (tanpa `ctx.filter`, aman untuk Safari < 18).
+- **`renderStrip()`** (`features/frames/export-strip.ts`): geometri sama dengan `PhotoStrip`, 300 dpi, font ditunggu sebelum menggambar cap tanggal.
+- **Unduh**: JPEG 92%, `snapduo-YYYY-MM-DD.jpg`; di HP pakai lembar share (Simpan ke Foto). **Cetak**: hanya strip, ukuran fisik frame (CSS di `globals.css`). Tombol menunggu foto tajam teman.
+- Tombol "Bagikan link" menampilkan catatan "menyusul" (Fase 4).
+
+**Tes**: unit web 94/94 (+ filter, photo channel, posisi kiri/kanan), E2E 15/15 (foto tajam 2/2 di kedua sisi, unduhan 1200×1800 untuk Duo, cetak 4×6 in). Dibandingkan visual: pratinjau vs unduhan identik (Strip malam + Hitam putih).
+
+## Catatan
+
+- Pemotongan foto ke slot pakai tengah (sama dengan pratinjau), bukan fokus 0,42.
+- Belum dites di iPhone: lembar share "Simpan ke Foto" dan cetak dari Safari. Tolong cek saat tes HP.
+
+## Berikutnya: Fase 4
+
+Link berbagi 24 jam (R2): upload strip, halaman `/p/[id]`, hapus otomatis + tombol hapus sekarang.

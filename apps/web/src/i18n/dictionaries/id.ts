@@ -70,6 +70,13 @@ export const id: Dictionary = {
 		invalid: "Sepertinya itu bukan link Snapduo. Tempel link lengkap yang dikirim temanmu.",
 		submit: "Gabung",
 	},
+	support: {
+		title: "Suka Snapduo?",
+		body: "Snapduo gratis dan tanpa iklan. Kalau mau dukung pengembangannya, traktir kopi lewat Saweria.",
+		cta: "Traktir kopi",
+		aboutCta: "Traktir kopi di Saweria",
+		newTab: "(buka di tab baru)",
+	},
 	about: {
 		title: "Cara kerja Snapduo",
 		intro: "Photobooth untuk dua orang di tempat berbeda. Tanpa akun, tanpa install aplikasi.",
@@ -203,6 +210,10 @@ export const id: Dictionary = {
 		stillHere: "{name} masih di sini",
 		downloadWhat: "Unduhan",
 		printWhat: "Cetak",
+		shareWhat: "Link berbagi",
+		waitingSharp: "Menunggu foto tajam dari {name}…",
+		preparing: "Menyiapkan…",
+		exportFailed: "Gagal membuat gambar. Coba lagi.",
 	},
 	shared: {
 		title: "Photo strip dari Snapduo",

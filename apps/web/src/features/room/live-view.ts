@@ -29,7 +29,7 @@ export interface LiveInput {
 	roomId: string;
 	room: RoomSnapshot;
 	selfId: string;
-	photos: ReadonlyMap<string, Shot>;
+	photos: ReadonlyMap<string, PhotoRecord>;
 	ui: LocalUi;
 	/** Local clock now, and server − local. */
 	now: number;
@@ -45,13 +45,33 @@ export interface LiveInput {
 
 export const photoKey = (captureId: string, slot: number) => `${captureId}:${slot}`;
 
-/** A slot the server says is filled but whose photo this browser doesn't have. */
-const MISSING_SVG =
+/**
+ * One slot's photos as this browser holds them: yours, and your friend's.
+ * Theirs starts as a frame of their live video and is replaced by their
+ * own camera photo when it arrives over the data channel.
+ */
+export interface PhotoRecord {
+	mine: string;
+	theirs: string;
+	/** `theirs` is their real camera photo. */
+	sharp: boolean;
+	/** Waited long enough: keep the video frame and say so. */
+	gaveUp: boolean;
+}
+
+/** Grey stand-in for a photo this browser doesn't have. */
+export const MISSING_PHOTO_URL =
 	"data:image/svg+xml;utf8," +
 	encodeURIComponent(
 		'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 40"><rect width="30" height="40" fill="#d9d4cd"/></svg>',
 	);
-export const MISSING_SHOT: Shot = { self: MISSING_SVG, friend: MISSING_SVG, lowQuality: true };
+export const MISSING_SHOT: Shot = { left: MISSING_PHOTO_URL, right: MISSING_PHOTO_URL, lowQuality: true };
+
+/** Creator on the left, friend on the right: the same strip on both phones. */
+export function toShot(rec: PhotoRecord, selfIsLeft: boolean): Shot {
+	const flags = { lowQuality: !rec.sharp && rec.gaveUp, pending: !rec.sharp && !rec.gaveUp };
+	return selfIsLeft ? { left: rec.mine, right: rec.theirs, ...flags } : { left: rec.theirs, right: rec.mine, ...flags };
+}
 
 export function liveRoomState(i: LiveInput): RoomState {
 	const { room, selfId } = i;
@@ -74,15 +94,20 @@ export function liveRoomState(i: LiveInput): RoomState {
 
 	// Photos: finished slots from the snapshot, plus shots of a capture in
 	// progress as soon as their shutter has fired.
+	const selfIsLeft = self?.seat !== "B";
+	const shotFor = (key: string): Shot | null => {
+		const rec = i.photos.get(key);
+		return rec ? toShot(rec, selfIsLeft) : null;
+	};
 	const shots: (Shot | null)[] = room.slots.map((captureId, slot) =>
-		captureId ? (i.photos.get(photoKey(captureId, slot)) ?? MISSING_SHOT) : null,
+		captureId ? (shotFor(photoKey(captureId, slot)) ?? MISSING_SHOT) : null,
 	);
 	let capture: Capture | null = null;
 	const c = room.capture;
 	if (c && room.phase === "capturing") {
 		const p = captureProgress(c, serverNow);
 		c.queue.slice(0, p.taken).forEach((slot) => {
-			const fresh = i.photos.get(photoKey(c.id, slot));
+			const fresh = shotFor(photoKey(c.id, slot));
 			if (fresh) shots[slot] = fresh;
 		});
 		capture = { queue: c.queue, index: p.index, countdown: p.countdown, startedBy: who(c.startedBy) ?? "friend" };

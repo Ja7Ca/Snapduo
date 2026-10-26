@@ -58,9 +58,9 @@ export function PhotoSlots({ frame, shots, selected, active, onSelect, disabled,
 							{shot ? (
 								<span className="flex size-full gap-0.5 bg-ink/10">
 									{/* eslint-disable-next-line @next/next/no-img-element -- local object/data URLs */}
-									<img src={shot.self} alt="" className="h-full w-1/2 object-cover" />
+									<img src={shot.left} alt="" className="h-full w-1/2 object-cover" />
 									{/* eslint-disable-next-line @next/next/no-img-element -- local object/data URLs */}
-									<img src={shot.friend} alt="" className="h-full w-1/2 object-cover" />
+									<img src={shot.right} alt="" className="h-full w-1/2 object-cover" />
 								</span>
 							) : (
 								<span className="flex size-full items-center justify-center font-display text-lg font-bold text-muted-foreground">

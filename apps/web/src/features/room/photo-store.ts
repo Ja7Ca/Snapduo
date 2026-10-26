@@ -16,8 +16,11 @@ export interface StoredPhoto {
 	id: string;
 	roomId: string;
 	key: string;
-	self: Blob;
-	friend: Blob | null;
+	/** Your camera photo (null if your camera didn't deliver one). */
+	mine: Blob | null;
+	/** Friend's photo: their own camera photo if `sharp`, else a video frame. */
+	theirs: Blob | null;
+	sharp: boolean;
 	savedAt: number;
 }
 
@@ -54,11 +57,15 @@ function request<T>(req: IDBRequest<T>): Promise<T> {
 	});
 }
 
-export async function savePhoto(roomId: string, key: string, self: Blob, friend: Blob | null): Promise<void> {
+export async function savePhoto(
+	roomId: string,
+	key: string,
+	photo: { mine: Blob | null; theirs: Blob | null; sharp: boolean },
+): Promise<void> {
 	try {
 		const db = await openDb();
 		const tx = db.transaction(STORE, "readwrite");
-		tx.objectStore(STORE).put({ id: `${roomId}/${key}`, roomId, key, self, friend, savedAt: Date.now() } satisfies StoredPhoto);
+		tx.objectStore(STORE).put({ id: `${roomId}/${key}`, roomId, key, ...photo, savedAt: Date.now() } satisfies StoredPhoto);
 		await done(tx);
 	} catch {
 		// Memory only.
@@ -75,7 +82,13 @@ export async function loadPhotos(roomId: string): Promise<StoredPhoto[]> {
 		const cutoff = Date.now() - MAX_AGE_MS;
 		for (const p of all) if (p.savedAt < cutoff) store.delete(p.id);
 		await done(tx);
-		return all.filter((p) => p.roomId === roomId && p.savedAt >= cutoff);
+		return all
+			.filter((p) => p.roomId === roomId && p.savedAt >= cutoff)
+			.map((p) => {
+				// Records saved before Phase 3 used self/friend.
+				const old = p as StoredPhoto & { self?: Blob; friend?: Blob | null };
+				return { ...p, mine: p.mine ?? old.self ?? null, theirs: p.theirs ?? old.friend ?? null, sharp: !!p.sharp };
+			});
 	} catch {
 		return [];
 	}

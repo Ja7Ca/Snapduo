@@ -62,7 +62,7 @@ export function PhotoStrip({ frame, shots, filter = "normal", date, dateLocale =
 					<g key={i}>
 						{halves.map((half, side) => {
 							const clip = `${id}-c${i}-${side}`;
-							const src = shot ? (side === 0 ? shot.self : shot.friend) : null;
+							const src = shot ? (side === 0 ? shot.left : shot.right) : null;
 							return (
 								<g key={side}>
 									<clipPath id={clip}>

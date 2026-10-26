@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Download, Link2, Printer } from "lucide-react";
+import { Download, Link2, Printer } from "lucide-react";
 import { useState, type Dispatch } from "react";
 import { toast } from "sonner";
 import { TilePlaceholder, VideoTile } from "@/components/booth/video-tile";
@@ -8,23 +8,17 @@ import { FilterRow } from "@/components/photo/filter-row";
 import { PhotoStrip } from "@/components/photo/photo-strip";
 import { SiteFooter, SiteHeader } from "@/components/site/site-chrome";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
 import type { FilterId } from "@/features/frames/filters";
 import { getFrame, printLabel } from "@/features/frames/frames";
 import { printStrip, renderStrip, saveStrip, stripFileName, stripToBlob } from "@/features/frames/export-strip";
+import { SharePanel } from "@/features/share/share-panel";
+import { useShareLink } from "@/features/share/use-share-link";
+import { ShareRequestError } from "@/lib/signal-client";
 import type { RoomAction, RoomState } from "@/features/room/room-state";
 import { frameName } from "@/features/frames/frame-name";
 import { useI18n } from "@/i18n/client";
 import { SITE_URL } from "@/lib/site";
+import { SHARE_TTL_MS } from "@snapduo/protocol";
 import { cn } from "@/lib/utils";
 
 interface ResultViewProps {
@@ -37,6 +31,8 @@ interface ResultViewProps {
 	preview?: boolean;
 	/** For screenshots of the "after sharing" state. */
 	initialShared?: boolean;
+	/** Your seat token: proves to the server you were in this room. */
+	seatToken?: string | null;
 }
 
 export function ResultView({
@@ -47,27 +43,50 @@ export function ResultView({
 	friendStream,
 	preview,
 	initialShared = false,
+	seatToken = null,
 }: ResultViewProps) {
 	const frame = getFrame(state.frameId);
 	const { t, fmt, locale } = useI18n();
 	const [filter, setFilter] = useState<FilterId>("normal");
 	const [shared, setShared] = useState(initialShared);
-	const [copied, setCopied] = useState(false);
 	const [date] = useState(() => new Date());
-	const shareUrl = `${SITE_URL.replace(/^https?:\/\//, "")}/p/${state.roomId}`;
+	const shareLink = useShareLink(state.roomId, seatToken);
+	// /dev/states shows a pretend link; a live room shows the real one.
+	const link = preview
+		? shared
+			? { id: state.roomId, deleteToken: "", expiresAt: date.getTime() + SHARE_TTL_MS }
+			: null
+		: shareLink.link;
 	const firstShot = state.shots.find(Boolean);
 	const landscape = frame.canvas.w > frame.canvas.h;
 
 	const notWired = (what: string) => toast(fmt(t.common.later, { what }), { description: t.common.laterBody });
-	const [busy, setBusy] = useState<"download" | "print" | null>(null);
+	const [busy, setBusy] = useState<"download" | "print" | "share" | null>(null);
 	// Download/print wait for the friend's sharp photos (or the time-out).
 	const waiting = !preview && state.shots.some((s) => s?.pending);
+
+	const renderBlob = async () =>
+		stripToBlob(await renderStrip({ frame, shots: state.shots, filter, date, dateLocale: locale }));
+
+	/** Uploads your copy (with your filter) for a 24-hour link. */
+	const share = async () => {
+		if (preview) return setShared(true);
+		setBusy("share");
+		try {
+			await shareLink.create(await renderBlob());
+		} catch (err) {
+			console.error(err);
+			toast.error(err instanceof ShareRequestError && err.code === "limit" ? t.result.shareLimit : t.result.shareFailed);
+		} finally {
+			setBusy(null);
+		}
+	};
 
 	const exportStrip = async (kind: "download" | "print") => {
 		if (preview) return notWired(kind === "download" ? t.result.downloadWhat : t.result.printWhat);
 		setBusy(kind);
 		try {
-			const blob = await stripToBlob(await renderStrip({ frame, shots: state.shots, filter, date, dateLocale: locale }));
+			const blob = await renderBlob();
 			if (kind === "download") await saveStrip(blob, stripFileName(date));
 			else await printStrip(blob, frame);
 		} catch (err) {
@@ -159,73 +178,29 @@ export function ResultView({
 							<Printer aria-hidden="true" />
 							{busy === "print" ? t.result.preparing : t.result.print}
 						</Button>
-						{!shared && (
-							// Share links (R2, 24 h) come in Phase 4.
-							<Button variant="secondary-playful" onClick={() => (preview ? setShared(true) : notWired(t.result.shareWhat))}>
+						{!link && (
+							<Button
+								variant="secondary-playful"
+								onClick={() => void share()}
+								disabled={waiting || busy !== null}
+								aria-busy={busy === "share"}
+							>
 								<Link2 aria-hidden="true" />
-								{t.result.share}
+								{busy === "share" ? t.result.preparing : t.result.share}
 							</Button>
 						)}
 					</div>
 
-					{shared && (
-						<section className="rounded-2xl p-5 outline-playful" aria-labelledby="share-title">
-							<h2 id="share-title" className="text-lg font-bold">
-								{t.result.shareTitle}
-							</h2>
-							<p className="mt-1 text-sm text-muted-foreground">{t.result.shareBody}</p>
-							<div className="mt-4 flex items-center gap-2 rounded-[14px] border border-border bg-secondary py-1.5 pr-1.5 pl-4">
-								<span className="min-w-0 flex-1 truncate font-mono text-sm">{shareUrl}</span>
-								<Button
-									variant="secondary"
-									size="sm"
-									onClick={() => {
-										setCopied(true);
-										toast.success(t.common.linkCopied);
-										setTimeout(() => setCopied(false), 2000);
-									}}
-								>
-									{copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
-									{copied ? t.common.copied : t.common.copy}
-								</Button>
-							</div>
-							<div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
-								<span className="text-muted-foreground">
-									{t.result.deletedIn} <span className="font-mono">23h 59m</span>
-								</span>
-								<Dialog>
-									<DialogTrigger asChild>
-										<Button variant="destructive-link" size="inline">
-											{t.result.deleteNow}
-										</Button>
-									</DialogTrigger>
-									<DialogContent showCloseButton={false}>
-										<DialogHeader>
-											<DialogTitle>{t.result.deleteTitle}</DialogTitle>
-											<DialogDescription>
-												{t.result.deleteBody}
-											</DialogDescription>
-										</DialogHeader>
-										<DialogFooter className="gap-2">
-											<DialogClose asChild>
-												<Button variant="secondary">{t.result.keepIt}</Button>
-											</DialogClose>
-											<DialogClose asChild>
-												<Button
-													variant="destructive"
-													onClick={() => {
-														setShared(false);
-														toast(t.result.deleted);
-													}}
-												>
-													{t.result.deleteNow}
-												</Button>
-											</DialogClose>
-										</DialogFooter>
-									</DialogContent>
-								</Dialog>
-							</div>
-						</section>
+					{link && (
+						<SharePanel
+							url={`${SITE_URL}/p/${link.id}`}
+							expiresAt={link.expiresAt}
+							now={preview ? date.getTime() : shareLink.now}
+							onDelete={async () => {
+								if (preview) setShared(false);
+								else await shareLink.remove();
+							}}
+						/>
 					)}
 
 					<div className="flex flex-wrap gap-x-6 gap-y-2">

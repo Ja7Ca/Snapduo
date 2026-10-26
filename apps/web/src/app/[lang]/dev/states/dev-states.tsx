@@ -73,7 +73,7 @@ function booth(state: RoomState) {
 
 function result(state: RoomState, shared = false) {
 	return function Result() {
-		return <ResultView state={state} dispatch={noop} onLeave={() => {}} friendPlaceholder={FRIEND} initialShared={shared} />;
+		return <ResultView state={state} dispatch={noop} onLeave={() => {}} friendPlaceholder={FRIEND} initialShared={shared} preview />;
 	};
 }
 

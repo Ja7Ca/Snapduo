@@ -52,6 +52,13 @@ function LiveRoom({ roomId }: { roomId: string }) {
 		() => "",
 	);
 	const name = typedName ?? rememberedName;
+	// Proves to the server you were in this room (share links). Read after
+	// joining, when the welcome has stored it.
+	const seatToken = useSyncExternalStore(
+		session.subscribe,
+		() => rememberedSeat(roomId)?.token ?? null,
+		() => null,
+	);
 	const roomUrl = useSyncExternalStore(
 		noopSubscribe,
 		() => `${window.location.origin}/r/${roomId}`,
@@ -176,7 +183,13 @@ function LiveRoom({ roomId }: { roomId: string }) {
 	return (
 		<>
 			{view.phase === "result" ? (
-				<ResultView state={view} dispatch={dispatch} onLeave={leave} friendStream={s.remoteStream} />
+				<ResultView
+					state={view}
+					dispatch={dispatch}
+					onLeave={leave}
+					friendStream={s.remoteStream}
+					seatToken={seatToken}
+				/>
 			) : (
 				<BoothView
 					state={view}

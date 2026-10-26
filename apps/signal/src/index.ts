@@ -1,24 +1,34 @@
 import {
+	MAX_SHARE_BYTES,
 	PROTOCOL_VERSION,
 	ROOM_ID_PATTERN,
+	SHARE_ID_PATTERN,
+	isJpeg,
 	roomIdFromBytes,
+	shareIdFromBytes,
 	type CreateRoomResponse,
+	type CreateShareResponse,
 	type RoomStatusResponse,
+	type ShareError,
 } from "@snapduo/protocol";
 import { originAllowed } from "./origins";
 import { getIceServers } from "./turn";
 
 export { RoomObject } from "./room";
+export { ShareObject } from "./share";
 
-function corsHeaders(origin: string | null, env: Env): HeadersInit {
+function corsHeaders(origin: string | null, env: Env): Record<string, string> {
 	if (!originAllowed(origin, env.ALLOWED_ORIGINS)) return {};
 	return {
 		"Access-Control-Allow-Origin": origin!,
-		"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-		"Access-Control-Allow-Headers": "Content-Type",
+		"Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization, X-Room-Id",
 		Vary: "Origin",
 	};
 }
+
+/** Share links are public to whoever has them: readable from any page. */
+const PUBLIC_READ = { "Access-Control-Allow-Origin": "*", "X-Robots-Tag": "noindex" };
 
 async function createRoom(env: Env): Promise<string | null> {
 	// 60 random bits: a clash is practically impossible, but cheap to handle.
@@ -27,6 +37,70 @@ async function createRoom(env: Env): Promise<string | null> {
 		if (await env.ROOM.getByName(roomId).create()) return roomId;
 	}
 	return null;
+}
+
+function shareError(code: ShareError, status: number, headers: HeadersInit): Response {
+	return Response.json({ error: code }, { status, headers });
+}
+
+/** POST /shares — body: the JPEG; headers: X-Room-Id + Authorization: Bearer <seat token>. */
+async function createShare(request: Request, env: Env, headers: Record<string, string>): Promise<Response> {
+	const roomId = request.headers.get("X-Room-Id") ?? "";
+	const token = (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+	if (!ROOM_ID_PATTERN.test(roomId) || !token) return shareError("unauthorized", 401, headers);
+
+	const declared = Number(request.headers.get("Content-Length") ?? 0);
+	if (declared > MAX_SHARE_BYTES) return shareError("too_large", 413, headers);
+	const bytes = new Uint8Array(await request.arrayBuffer());
+	if (bytes.byteLength > MAX_SHARE_BYTES) return shareError("too_large", 413, headers);
+	if (!isJpeg(bytes)) return shareError("not_jpeg", 415, headers);
+
+	// Only someone holding a seat in that room, and only a few times.
+	const claim = await env.ROOM.getByName(roomId).claimShare(token);
+	if (claim === "unauthorized") return shareError("unauthorized", 401, headers);
+	if (claim === "limit") return shareError("limit", 429, headers);
+
+	for (let attempt = 0; attempt < 3; attempt++) {
+		const id = shareIdFromBytes(crypto.getRandomValues(new Uint8Array(16)));
+		const created = await env.SHARE.getByName(id).create(id, bytes, "image/jpeg");
+		if (created) {
+			return Response.json({ id, ...created } satisfies CreateShareResponse, { status: 201, headers });
+		}
+	}
+	return new Response("Try again", { status: 503, headers });
+}
+
+async function shareRoute(request: Request, env: Env, id: string, image: boolean, headers: Record<string, string>): Promise<Response> {
+	const stub = env.SHARE.getByName(id);
+
+	if (request.method === "DELETE" && !image) {
+		const token = (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+		const ok = await stub.remove(token);
+		return new Response(null, { status: ok ? 204 : 403, headers });
+	}
+	if (request.method !== "GET") return new Response("Method not allowed", { status: 405, headers });
+
+	const read = { ...PUBLIC_READ, "Cache-Control": "no-store" };
+	if (!image) {
+		const info = await stub.info();
+		if (info === null) return shareError("not_found", 404, read);
+		if (info === "gone") return shareError("not_found", 410, read);
+		return Response.json(info, { headers: read });
+	}
+
+	const result = await stub.image();
+	if (result === null) return new Response("Not found", { status: 404, headers: read });
+	if (result === "gone") return new Response("Gone", { status: 410, headers: read });
+	// Browsers may keep it until it expires, never longer (and never shared caches).
+	const maxAge = Math.max(0, Math.min(3600, Math.floor((result.info.expiresAt - Date.now()) / 1000)));
+	return new Response(result.bytes, {
+		headers: {
+			...PUBLIC_READ,
+			"Content-Type": result.info.contentType,
+			"Content-Length": String(result.bytes.byteLength),
+			"Cache-Control": `private, max-age=${maxAge}`,
+		},
+	});
 }
 
 export default {
@@ -43,8 +117,18 @@ export default {
 			return Response.json({ ok: true, protocol: PROTOCOL_VERSION }, { headers: cors });
 		}
 
-		// Browsers always send Origin on WebSocket and cross-site fetches.
-		// Rejecting unknown origins stops other sites from using our quota.
+		// Reading a share link: anyone with the link, from any page (an <img>
+		// sends no Origin at all).
+		const share = url.pathname.match(/^\/shares\/([^/]+)(\/image)?$/);
+		if (share && request.method === "GET") {
+			const [, id, image] = share;
+			if (!SHARE_ID_PATTERN.test(id)) return new Response("Not found", { status: 404, headers: PUBLIC_READ });
+			return shareRoute(request, env, id, !!image, {});
+		}
+
+		// Everything else: only our own site. Browsers always send Origin on
+		// WebSocket and cross-site fetches; this stops other sites from using
+		// our TURN quota, rooms or storage.
 		if (!originAllowed(origin, env.ALLOWED_ORIGINS)) {
 			return new Response("Forbidden origin", { status: 403 });
 		}
@@ -58,6 +142,15 @@ export default {
 			const roomId = await createRoom(env);
 			if (!roomId) return new Response("Try again", { status: 503, headers: noStore });
 			return Response.json({ roomId } satisfies CreateRoomResponse, { status: 201, headers: noStore });
+		}
+
+		if (url.pathname === "/shares" && request.method === "POST") {
+			return createShare(request, env, noStore);
+		}
+		if (share) {
+			const [, id, image] = share;
+			if (!SHARE_ID_PATTERN.test(id)) return new Response("Not found", { status: 404, headers: noStore });
+			return shareRoute(request, env, id, !!image, noStore);
 		}
 
 		const route = url.pathname.match(/^\/rooms\/([^/]+)(\/ws)?$/);

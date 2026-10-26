@@ -4,9 +4,12 @@ import {
 	PROTOCOL_VERSION,
 	type ClientMessage,
 	type CreateRoomResponse,
+	type CreateShareResponse,
 	type IceServersResponse,
 	type RoomStatusResponse,
 	type ServerMessage,
+	type ShareError,
+	type ShareInfo,
 } from "@snapduo/protocol";
 
 // Trailing slashes would produce "//turn-credentials" (404).
@@ -164,4 +167,52 @@ export class SignalSocket {
 		if (this.timer) clearInterval(this.timer);
 		this.timer = null;
 	}
+}
+
+/* ---------- share links ---------- */
+
+export class ShareRequestError extends Error {
+	constructor(readonly code: ShareError | "network") {
+		super(`Share request failed: ${code}`);
+	}
+}
+
+/** Uploads a finished strip; only works for someone with a seat in the room. */
+export async function createShareRequest(roomId: string, seatToken: string, strip: Blob): Promise<CreateShareResponse> {
+	let res: Response;
+	try {
+		res = await fetch(`${SIGNAL_URL}/shares`, {
+			method: "POST",
+			headers: { "Content-Type": "image/jpeg", "X-Room-Id": roomId, Authorization: `Bearer ${seatToken}` },
+			body: strip,
+		});
+	} catch {
+		throw new ShareRequestError("network");
+	}
+	if (!res.ok) {
+		const body = (await res.json().catch(() => null)) as { error?: ShareError } | null;
+		throw new ShareRequestError(body?.error ?? "network");
+	}
+	return res.json();
+}
+
+/** null = never existed or deleted; "gone" = expired. Throws on network errors. */
+export async function fetchShareInfo(id: string): Promise<ShareInfo | "gone" | null> {
+	const res = await fetch(`${SIGNAL_URL}/shares/${id}`, { cache: "no-store" });
+	if (res.status === 404) return null;
+	if (res.status === 410) return "gone";
+	if (!res.ok) throw new Error(`Share info failed: ${res.status}`);
+	return res.json();
+}
+
+export function shareImageUrl(id: string): string {
+	return `${SIGNAL_URL}/shares/${id}/image`;
+}
+
+export async function deleteShareRequest(id: string, deleteToken: string): Promise<void> {
+	const res = await fetch(`${SIGNAL_URL}/shares/${id}`, {
+		method: "DELETE",
+		headers: { Authorization: `Bearer ${deleteToken}` },
+	});
+	if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
 }

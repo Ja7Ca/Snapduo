@@ -8,6 +8,7 @@
     "build:web": "pnpm --filter @snapduo/web build",
     "deploy:signal": "pnpm --filter @snapduo/signal deploy",
     "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm -r --if-present test"
+    "test": "pnpm -r --if-present test",
+    "lint": "pnpm --filter @snapduo/web lint"
   }
 }

@@ -51,7 +51,7 @@ export interface ShareInfo {
 	bytes: number;
 }
 
-export type ShareError = "unauthorized" | "too_large" | "not_jpeg" | "limit" | "not_found";
+export type ShareError = "unauthorized" | "too_large" | "not_jpeg" | "limit" | "not_found" | "rate_limited";
 
 /** "23j 59m" / "23h 59m": remaining time, rounded up to the minute. */
 export function remainingParts(expiresAt: number, now: number): { h: number; m: number } {

@@ -6,6 +6,9 @@ import {
 	PROTOCOL_VERSION,
 	ROOM_CAPACITY,
 	SHARES_PER_SEAT,
+	SOCKET_MAX_INTENTS,
+	SOCKET_MAX_MESSAGES,
+	SOCKET_WINDOW_MS,
 	STALE_MS,
 	applyIntent,
 	createRoom,
@@ -66,6 +69,11 @@ export class RoomObject extends DurableObject<Env> {
 		this.room = createRoom(Date.now());
 		await this.save();
 		return true;
+	}
+
+	/** Does this token hold a seat here (present or briefly away)? */
+	async hasSeat(token: string): Promise<boolean> {
+		return typeof token === "string" && !!this.room?.seats.some((s) => s.token === token);
 	}
 
 	/**
@@ -129,6 +137,12 @@ export class RoomObject extends DurableObject<Env> {
 			return;
 		}
 		if (!msg || typeof msg !== "object") return;
+		if (this.flooding(ws, msg.type === "intent")) {
+			// A real client never gets close: this is a script. Each intent
+			// costs a storage write and a broadcast, so cut it off.
+			this.reject(ws, "bad_request", CloseCode.BadRequest, "Too many messages.");
+			return;
+		}
 
 		const room = await this.advance();
 		if (!room) {
@@ -256,6 +270,21 @@ export class RoomObject extends DurableObject<Env> {
 	}
 
 	/* ---------- helpers ---------- */
+
+	/** Message counts per socket for the current window (memory only; a reset on hibernation is fine). */
+	private traffic = new WeakMap<WebSocket, { since: number; messages: number; intents: number }>();
+
+	private flooding(ws: WebSocket, intent: boolean): boolean {
+		const now = Date.now();
+		let t = this.traffic.get(ws);
+		if (!t || now - t.since > SOCKET_WINDOW_MS) {
+			t = { since: now, messages: 0, intents: 0 };
+			this.traffic.set(ws, t);
+		}
+		t.messages++;
+		if (intent) t.intents++;
+		return t.messages > SOCKET_MAX_MESSAGES || t.intents > SOCKET_MAX_INTENTS;
+	}
 
 	/**
 	 * Applies time-based changes (capture finished, seat released) before

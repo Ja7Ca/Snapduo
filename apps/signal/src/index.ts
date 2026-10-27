@@ -1,19 +1,24 @@
 import {
+	MAX_ERROR_REPORT_BYTES,
 	MAX_SHARE_BYTES,
 	PROTOCOL_VERSION,
 	ROOM_ID_PATTERN,
 	SHARE_ID_PATTERN,
 	isJpeg,
 	roomIdFromBytes,
+	sanitizeReport,
 	shareIdFromBytes,
 	type CreateRoomResponse,
 	type CreateShareResponse,
+	type RateLimitedResponse,
 	type RoomStatusResponse,
 	type ShareError,
 } from "@snapduo/protocol";
+import { clientIp, overRate, takeQuota } from "./limits";
 import { originAllowed } from "./origins";
 import { getIceServers } from "./turn";
 
+export { QuotaObject } from "./limits";
 export { RoomObject } from "./room";
 export { ShareObject } from "./share";
 
@@ -43,11 +48,24 @@ function shareError(code: ShareError, status: number, headers: HeadersInit): Res
 	return Response.json({ error: code }, { status, headers });
 }
 
+function rateLimited(headers: HeadersInit): Response {
+	return Response.json({ error: "rate_limited" } satisfies RateLimitedResponse, {
+		status: 429,
+		headers: { ...headers, "Retry-After": "60" },
+	});
+}
+
+/** Bearer token from the Authorization header ("" if none). */
+function bearer(request: Request): string {
+	return (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+}
+
 /** POST /shares — body: the JPEG; headers: X-Room-Id + Authorization: Bearer <seat token>. */
 async function createShare(request: Request, env: Env, headers: Record<string, string>): Promise<Response> {
 	const roomId = request.headers.get("X-Room-Id") ?? "";
-	const token = (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+	const token = bearer(request);
 	if (!ROOM_ID_PATTERN.test(roomId) || !token) return shareError("unauthorized", 401, headers);
+	if (await overRate(env.RL_SHARES, clientIp(request))) return rateLimited(headers);
 
 	const declared = Number(request.headers.get("Content-Length") ?? 0);
 	if (declared > MAX_SHARE_BYTES) return shareError("too_large", 413, headers);
@@ -55,7 +73,9 @@ async function createShare(request: Request, env: Env, headers: Record<string, s
 	if (bytes.byteLength > MAX_SHARE_BYTES) return shareError("too_large", 413, headers);
 	if (!isJpeg(bytes)) return shareError("not_jpeg", 415, headers);
 
-	// Only someone holding a seat in that room, and only a few times.
+	// Only someone holding a seat in that room, a few times per room, and
+	// a few dozen times per IP per day (storage is the costly part).
+	if (!(await takeQuota(env, request, "shares"))) return rateLimited(headers);
 	const claim = await env.ROOM.getByName(roomId).claimShare(token);
 	if (claim === "unauthorized") return shareError("unauthorized", 401, headers);
 	if (claim === "limit") return shareError("limit", 429, headers);
@@ -74,8 +94,7 @@ async function shareRoute(request: Request, env: Env, id: string, image: boolean
 	const stub = env.SHARE.getByName(id);
 
 	if (request.method === "DELETE" && !image) {
-		const token = (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
-		const ok = await stub.remove(token);
+		const ok = await stub.remove(bearer(request));
 		return new Response(null, { status: ok ? 204 : 403, headers });
 	}
 	if (request.method !== "GET") return new Response("Method not allowed", { status: 405, headers });
@@ -123,6 +142,7 @@ export default {
 		if (share && request.method === "GET") {
 			const [, id, image] = share;
 			if (!SHARE_ID_PATTERN.test(id)) return new Response("Not found", { status: 404, headers: PUBLIC_READ });
+			if (await overRate(env.RL_READS, clientIp(request))) return rateLimited(PUBLIC_READ);
 			return shareRoute(request, env, id, !!image, {});
 		}
 
@@ -134,14 +154,43 @@ export default {
 		}
 		const noStore = { ...cors, "Cache-Control": "no-store" };
 
+		// TURN relays any traffic, and past the free allowance it is billed:
+		// credentials only for someone sitting in a room.
 		if (url.pathname === "/turn-credentials" && request.method === "GET") {
+			const roomId = request.headers.get("X-Room-Id") ?? "";
+			const token = bearer(request);
+			if (!ROOM_ID_PATTERN.test(roomId) || !token) return new Response("Unauthorized", { status: 401, headers: noStore });
+			if (await overRate(env.RL_TURN, clientIp(request))) return rateLimited(noStore);
+			if (!(await env.ROOM.getByName(roomId).hasSeat(token))) {
+				return new Response("Unauthorized", { status: 401, headers: noStore });
+			}
 			return Response.json(await getIceServers(env), { headers: noStore });
 		}
 
 		if (url.pathname === "/rooms" && request.method === "POST") {
+			if (await overRate(env.RL_ROOMS, clientIp(request))) return rateLimited(noStore);
+			if (!(await takeQuota(env, request, "rooms"))) return rateLimited(noStore);
 			const roomId = await createRoom(env);
 			if (!roomId) return new Response("Try again", { status: 503, headers: noStore });
 			return Response.json({ roomId } satisfies CreateRoomResponse, { status: 201, headers: noStore });
+		}
+
+		// Error reports from browsers → Workers Logs (see protocol/errors.ts).
+		if (url.pathname === "/errors" && request.method === "POST") {
+			if (await overRate(env.RL_ERRORS, clientIp(request))) return new Response(null, { status: 429, headers: cors });
+			const declared = Number(request.headers.get("Content-Length") ?? 0);
+			if (declared > MAX_ERROR_REPORT_BYTES) return new Response(null, { status: 413, headers: cors });
+			const text = await request.text();
+			if (text.length > MAX_ERROR_REPORT_BYTES) return new Response(null, { status: 413, headers: cors });
+			let report: ReturnType<typeof sanitizeReport> = null;
+			try {
+				report = sanitizeReport(JSON.parse(text));
+			} catch {
+				// not JSON
+			}
+			if (!report) return new Response(null, { status: 400, headers: cors });
+			console.error(JSON.stringify({ event: "client_error", ...report }));
+			return new Response(null, { status: 204, headers: cors });
 		}
 
 		if (url.pathname === "/shares" && request.method === "POST") {
@@ -158,7 +207,11 @@ export default {
 			const [, roomId, ws] = route;
 			if (!ROOM_ID_PATTERN.test(roomId)) return new Response("Bad room id", { status: 400, headers: cors });
 			const stub = env.ROOM.getByName(roomId);
-			if (ws) return stub.fetch(request);
+			if (ws) {
+				// Too many connections from one IP: refuse before the upgrade.
+				if (await overRate(env.RL_SOCKETS, clientIp(request))) return rateLimited(noStore);
+				return stub.fetch(request);
+			}
 			if (request.method === "GET") {
 				return Response.json({ status: await stub.status() } satisfies RoomStatusResponse, { headers: noStore });
 			}

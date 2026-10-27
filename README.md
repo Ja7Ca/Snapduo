@@ -100,6 +100,12 @@ After deploying:
 
 - **Share links last exactly 24 hours.** "Share link" uploads your copy of the strip (with your filter) to the Worker. Each link is a `ShareObject` Durable Object that stores the file in 1 MB chunks and deletes itself with an alarm at 24 h; reads after the deadline are refused even if the alarm is late. Only someone with a seat in the room can upload (seat token), JPEG only, 5 MB max, 5 links per person. The photo never appears in link previews (chat apps would keep a copy past 24 h). Bytes sit behind a `BlobStore` interface so large files (video) can move to R2 later while the Durable Object keeps the 24-hour rule.
 
+- **Abuse limits.** Per-IP, per-minute limits (Cloudflare Rate Limiting binding: rooms, share uploads, TURN, sockets, share reads) and exact daily quotas per IP (a `QuotaObject` Durable Object: rooms, uploads). TURN credentials are only handed to someone holding a seat in a room, because TURN relays any traffic and is billed past the free allowance. A socket sending far more than a real client is closed. Numbers live in `packages/protocol/src/limits.ts` (and `ratelimits` in `wrangler.jsonc`).
+- **In-app browsers.** Links opened inside Instagram, Facebook, LINE, TikTok… often can't use the camera (especially on iPhone). The room page detects them first and shows "open in Safari/Chrome" steps, a copy-link button and, on Android, a button that opens Chrome directly; "Try anyway" skips it.
+
+- **Error reports.** Uncaught errors in production browsers go to the Worker (`POST /errors`) and into Workers Logs as `client_error`, with room/share ids scrubbed and no IP or query string.
+- **Security headers.** CSP, Permissions-Policy (camera/mic for this site only), Referrer-Policy, nosniff, no framing, HSTS: see `apps/web/src/lib/security-headers.ts`.
+
 Add `?debug=1` to a room link for connection details (socket, seat, clock offset, `host`/`srflx`/`relay` path, bitrate); `&relay=1` forces TURN.
 
 **Deploying.** Both apps deploy themselves from Git: a push to `main` builds the Worker (Cloudflare Workers Builds, root `apps/signal`) and the web app (Vercel, root `apps/web`). The two finish independently, so during a protocol change rooms show "reload" for a few minutes. If Workers Builds is stuck in its queue, deploy the Worker by hand from a clean, up-to-date `main` (`git status` empty):
@@ -125,11 +131,16 @@ In Vercel, set `NEXT_PUBLIC_SIGNAL_URL` to the Worker URL for **Production and P
 |---|---|
 | `pnpm dev:web` / `pnpm dev:signal` | Run each app locally |
 | `pnpm typecheck` | Type-check every package |
+| `pnpm lint` | Lint the web app |
 | `pnpm test` | Unit tests (protocol rules, room view mapping, frames, i18n, routing, SEO files, theme) and Worker tests in the Workers runtime |
 | `pnpm build:web` | Production build of the web app |
 | `pnpm deploy:signal` | Deploy the Worker (needs `wrangler login`) |
 
 After changing bindings in `apps/signal/wrangler.jsonc`, run `pnpm --filter @snapduo/signal cf-typegen`.
+
+## CI
+
+`.github/workflows/ci.yml` runs install, typecheck, lint, all tests (including the Worker tests in the Workers runtime) and the web build on every pull request and push to `main`.
 
 ## Protocol changes
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ErrorReporter } from "@/components/site/error-reporter";
 import { ThemeSync } from "@/components/site/theme";
 import { Toaster } from "@/components/ui/sonner";
 import { I18nProvider } from "@/i18n/client";
@@ -65,6 +66,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
 				<I18nProvider locale={locale} dict={getDictionary(locale)}>
 					{children}
 					<ThemeSync />
+					<ErrorReporter />
 					<Toaster position="top-center" />
 				</I18nProvider>
 			</body>

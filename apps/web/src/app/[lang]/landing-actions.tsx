@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { parseRoomInput } from "@/features/room/room-id";
 import { rememberLocale, useI18n } from "@/i18n/client";
-import { createRoomRequest } from "@/lib/signal-client";
+import { RateLimitedError, createRoomRequest } from "@/lib/signal-client";
 
 export function CreateRoomButton({ className }: { className?: string }) {
 	const router = useRouter();
@@ -42,7 +42,7 @@ export function CreateRoomButton({ className }: { className?: string }) {
 						startTransition(() => router.push(`/r/${id}`));
 					} catch (err) {
 						console.error(err);
-						toast.error(t.common.createFailed);
+						toast.error(err instanceof RateLimitedError ? t.common.rateLimited : t.common.createFailed);
 					}
 				})
 			}

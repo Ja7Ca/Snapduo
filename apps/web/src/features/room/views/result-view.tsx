@@ -76,7 +76,8 @@ export function ResultView({
 			await shareLink.create(await renderBlob());
 		} catch (err) {
 			console.error(err);
-			toast.error(err instanceof ShareRequestError && err.code === "limit" ? t.result.shareLimit : t.result.shareFailed);
+			const code = err instanceof ShareRequestError ? err.code : null;
+			toast.error(code === "limit" ? t.result.shareLimit : code === "rate_limited" ? t.common.rateLimited : t.result.shareFailed);
 		} finally {
 			setBusy(null);
 		}

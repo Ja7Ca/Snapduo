@@ -10,6 +10,8 @@ import {
 	RoomNotFoundScreen,
 	UpdateScreen,
 } from "@/components/site/message-screen";
+import { OpenInBrowserScreen } from "@/components/site/open-in-browser";
+import { browserProblem, currentBrowserFacts, type BrowserProblem } from "@/features/media/browser-support";
 import { useAudioLevel, useLocalMedia } from "@/features/media/use-local-media";
 import { useI18n } from "@/i18n/client";
 import { fetchRoomStatus } from "@/lib/signal-client";
@@ -45,6 +47,14 @@ function LiveRoom({ roomId }: { roomId: string }) {
 	const [typedName, setTypedName] = useState<string | null>(null);
 	const [now, setNow] = useState(0);
 	const [precheck, setPrecheck] = useState<Precheck>("checking");
+	const [ignoreBrowser, setIgnoreBrowser] = useState(false);
+	// A string snapshot (stable between renders), parsed below.
+	const browserJson = useSyncExternalStore(
+		noopSubscribe,
+		() => JSON.stringify(browserProblem(currentBrowserFacts())),
+		() => "null",
+	);
+	const problem = JSON.parse(browserJson) as BrowserProblem | null;
 
 	const rememberedName = useSyncExternalStore(
 		noopSubscribe,
@@ -153,6 +163,11 @@ function LiveRoom({ roomId }: { roomId: string }) {
 	if (failure === "protocol_mismatch") return <UpdateScreen />;
 
 	const debugPanel = debug ? <DebugPanel state={s} /> : null;
+
+	// Before asking for the camera: in-app or unsupported browser?
+	if (problem && !ignoreBrowser && s.status === "idle") {
+		return <OpenInBrowserScreen problem={problem} url={roomUrl} onContinue={() => setIgnoreBrowser(true)} />;
+	}
 
 	if (s.status === "idle" || failure === "left") {
 		return (

@@ -91,3 +91,50 @@ Worker punya Durable Object baru (migration `v2`, binding `SHARE`) — tidak per
 ## Juga diperbaiki
 
 - Tombol "Buat room" terkunci ("Membuat room…") dan dialog "Gabung room" masih terbuka setelah keluar dari booth (state halaman disimpan Next.js).
+
+---
+
+# Fase 5 (A–C) — hardening (27 Okt 2026)
+
+## A. Batas laju & biaya
+- Batas per menit per IP (binding Rate Limiting Cloudflare, perkiraan per lokasi): buat room 10, unggah share 5, TURN 20, koneksi socket 30, baca share 120. Lewat → 429 + `Retry-After`, web menampilkan "Terlalu banyak percobaan".
+- Kuota harian tepat per IP (`QuotaObject`, DO per IP per hari, menghapus diri): buat room 60, unggah share 30.
+- **TURN hanya untuk yang punya kursi** (token kursi). Web mengambil kredensial setelah masuk room; diperbarui setelah 90 menit saat reconnect.
+- Socket yang mengirim > 200 pesan / > 40 intent per 10 detik diputus.
+- Tes worker 27/27 (5 baru: batas room per menit, kuota harian, TURN wajib kursi, banjir pesan diputus, trafik normal aman).
+
+## B. Browser bawaan aplikasi
+- Instagram/Facebook/LINE/TikTok/Snapchat/X/LinkedIn/WeChat/Threads, atau browser tanpa kamera/WebRTC/https → layar "Buka di browser biasa dulu": langkah iPhone/Android, Salin link, tombol "Buka di Chrome" (Android), "Coba tetap lanjut".
+- Dites dengan user agent asli (unit) dan tampilan iPhone-Instagram / Android-Facebook (aksesibilitas bersih).
+
+## C. CI
+- `.github/workflows/ci.yml`: install, typecheck, lint, semua tes (151), build web di setiap PR dan push ke `main`.
+
+## Bug yang ketemu & diperbaiki
+- Di HP lambat, slot sesaat menampilkan setengah abu-abu: foto tajam teman tiba sebelum foto sendiri selesai di-encode. Sekarang foto teman ditahan sampai foto sendiri siap. E2E 17/17 tiga kali berturut-turut.
+
+---
+
+# Fase 5 (D–F) — laporan error, 404/error, header keamanan (27 Okt 2026)
+
+## D. Laporan error dari browser
+- Error yang tidak tertangkap, promise yang gagal, dan error render (error boundary) dikirim ke `POST /errors` di worker → **Workers Logs** (`event: "client_error"`). Hanya build production; maks 10 per halaman, pesan sama sekali saja; noise (ekstensi browser, "Script error.", ResizeObserver) diabaikan.
+- Tanpa data pribadi: tanpa IP, tanpa query/hash; **ID room & link disamarkan** (`/r/:room`, `/p/:share`, UUID → `:uuid`) di browser dan lagi di worker. Batas 8 KB, 20/menit per IP, hanya dari situs sendiri.
+- Melihatnya: Cloudflare → Workers → snapduo-signal → Observability/Logs, cari `client_error`.
+
+## E. Halaman 404 & error
+- 404 dua bahasa bergaya Snapduo untuk semua URL tak dikenal (route penampung `[lang]/[...rest]`), status 404, judul "404 · Snapduo", `noindex`.
+- Error saat render → layar "Ada yang tidak beres" + Coba lagi (dan dilaporkan). `global-error.tsx` sebagai cadangan terakhir.
+- Diperbaiki sekalian: tema gelap tidak terbaca di halaman 404 (Next membangun ulang `<head>` di browser, script tema tidak jalan) → `ThemeSync` menerapkannya.
+
+## F. Header keamanan (semua halaman)
+- **CSP** (production): script/style hanya dari situs sendiri (+ inline), gambar dari situs/`blob:`/`data:`/worker, koneksi hanya ke worker (HTTP + WebSocket), tidak bisa di-iframe, `object-src 'none'`. `'unsafe-inline'` dipertahankan karena nonce akan memaksa semua halaman dirender per request.
+- `Permissions-Policy` (kamera & mikrofon hanya untuk situs ini), `Referrer-Policy: strict-origin-when-cross-origin` (situs lain tidak melihat path room), `nosniff`, `X-Frame-Options: DENY`, HSTS.
+
+## Tes
+- Protocol 29/29, web 102/102, worker 29/29.
+- E2E **18/18**, termasuk **0 pelanggaran CSP** di semua tab (kamera, video, foto tajam, unduh, cetak, link berbagi, halaman orang asing).
+- 404 id/en/bahasa tak dikenal: status 404, aksesibilitas bersih, tema benar. Error sungguhan di halaman room sampai ke log worker dengan ID tersamarkan.
+
+## Berikutnya
+- Audit keamanan (skill `security-audit`): saran profil `quick`, cakupan `apps/signal` + `packages/protocol`, budget ±12 agent.

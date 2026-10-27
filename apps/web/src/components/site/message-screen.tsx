@@ -119,3 +119,21 @@ export function UpdateScreen() {
 		</MessageScreen>
 	);
 }
+
+export function PageNotFoundScreen() {
+	const { t } = useI18n();
+	return (
+		<MessageScreen art="empty" title={t.messages.pageNotFoundTitle} cta={t.messages.pageNotFoundCta}>
+			{t.messages.pageNotFoundBody}
+		</MessageScreen>
+	);
+}
+
+export function ErrorScreen({ onRetry }: { onRetry: () => void }) {
+	const { t } = useI18n();
+	return (
+		<MessageScreen art="empty" title={t.messages.errorTitle} cta={t.messages.errorCta} onCta={onRetry}>
+			{t.messages.errorBody}
+		</MessageScreen>
+	);
+}

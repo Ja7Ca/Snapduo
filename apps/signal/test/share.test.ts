@@ -14,12 +14,16 @@ import type { ShareObject } from "../src/share";
 const ORIGIN = "http://localhost:3000";
 const BASE = "https://signal.test";
 
+/** Each request from its own address, so per-IP limits don't leak between tests. */
+let ipCounter = 0;
+const fakeIp = () => `10.0.${Math.floor(++ipCounter / 250)}.${ipCounter % 250}`;
+
 /** A room with one person in it; returns their seat token. */
 async function seatInRoom(): Promise<{ roomId: string; token: string; ws: WebSocket }> {
-	const res = await SELF.fetch(`${BASE}/rooms`, { method: "POST", headers: { Origin: ORIGIN } });
+	const res = await SELF.fetch(`${BASE}/rooms`, { method: "POST", headers: { Origin: ORIGIN, "CF-Connecting-IP": fakeIp() } });
 	const { roomId } = (await res.json()) as CreateRoomResponse;
 	const up = await SELF.fetch(`${BASE}/rooms/${roomId}/ws?v=${PROTOCOL_VERSION}`, {
-		headers: { Upgrade: "websocket", Origin: ORIGIN },
+		headers: { Upgrade: "websocket", Origin: ORIGIN, "CF-Connecting-IP": fakeIp() },
 	});
 	const ws = up.webSocket!;
 	ws.accept();
@@ -43,7 +47,7 @@ function jpeg(size: number, fill = 7): Uint8Array {
 function upload(roomId: string, token: string, body: Uint8Array, origin = ORIGIN) {
 	return SELF.fetch(`${BASE}/shares`, {
 		method: "POST",
-		headers: { Origin: origin, "X-Room-Id": roomId, Authorization: `Bearer ${token}`, "Content-Type": "image/jpeg" },
+		headers: { Origin: origin, "CF-Connecting-IP": fakeIp(), "X-Room-Id": roomId, Authorization: `Bearer ${token}`, "Content-Type": "image/jpeg" },
 		body,
 	});
 }

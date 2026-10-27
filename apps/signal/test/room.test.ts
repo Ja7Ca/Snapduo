@@ -15,12 +15,16 @@ import type { RoomObject } from "../src/room";
 const ORIGIN = "http://localhost:3000";
 const BASE = "https://signal.test";
 
+/** Each request from its own address, so per-IP limits don't leak between tests. */
+let ipCounter = 0;
+const fakeIp = () => `10.0.${Math.floor(++ipCounter / 250)}.${ipCounter % 250}`;
+
 type Msg<T extends ServerMessage["type"]> = Extract<ServerMessage, { type: T }>;
 
 /** A test client: collects messages and lets a test wait for one type. */
 async function connect(roomId: string, version = PROTOCOL_VERSION) {
 	const res = await SELF.fetch(`${BASE}/rooms/${roomId}/ws?v=${version}`, {
-		headers: { Upgrade: "websocket", Origin: ORIGIN },
+		headers: { Upgrade: "websocket", Origin: ORIGIN, "CF-Connecting-IP": fakeIp() },
 	});
 	const ws = res.webSocket;
 	if (!ws) throw new Error(`no websocket (${res.status})`);
@@ -66,7 +70,7 @@ async function connect(roomId: string, version = PROTOCOL_VERSION) {
 }
 
 async function createRoom(): Promise<string> {
-	const res = await SELF.fetch(`${BASE}/rooms`, { method: "POST", headers: { Origin: ORIGIN } });
+	const res = await SELF.fetch(`${BASE}/rooms`, { method: "POST", headers: { Origin: ORIGIN, "CF-Connecting-IP": fakeIp() } });
 	expect(res.status).toBe(201);
 	return ((await res.json()) as CreateRoomResponse).roomId;
 }
@@ -79,7 +83,7 @@ async function joinAs(roomId: string, name: string, token?: string) {
 }
 
 async function status(roomId: string) {
-	const res = await SELF.fetch(`${BASE}/rooms/${roomId}`, { headers: { Origin: ORIGIN } });
+	const res = await SELF.fetch(`${BASE}/rooms/${roomId}`, { headers: { Origin: ORIGIN, "CF-Connecting-IP": fakeIp() } });
 	return ((await res.json()) as RoomStatusResponse).status;
 }
 
@@ -94,7 +98,7 @@ describe("origins", () => {
 	});
 
 	it("refuses unknown origins for rooms and TURN", async () => {
-		const res = await SELF.fetch(`${BASE}/rooms`, { method: "POST", headers: { Origin: "https://evil.com" } });
+		const res = await SELF.fetch(`${BASE}/rooms`, { method: "POST", headers: { Origin: "https://evil.com", "CF-Connecting-IP": fakeIp() } });
 		expect(res.status).toBe(403);
 	});
 });

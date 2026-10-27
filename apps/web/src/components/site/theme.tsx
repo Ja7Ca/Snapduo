@@ -41,6 +41,19 @@ export function useTheme() {
  */
 export function ThemeSync() {
 	useEffect(() => {
+		// The <head> script normally sets the theme before the first paint.
+		// On some responses (Next.js 404s from notFound()) the head is
+		// rebuilt in the browser and that script never runs: apply it now.
+		if (!document.documentElement.hasAttribute("data-theme-init")) {
+			let stored: string | null = null;
+			try {
+				stored = localStorage.getItem(THEME_STORAGE_KEY);
+			} catch {
+				// Storage blocked: default theme.
+			}
+			applyTheme(parsePref(stored));
+			window.dispatchEvent(new Event(CHANGE_EVENT));
+		}
 		const media = window.matchMedia("(prefers-color-scheme: dark)");
 		const onSystem = () => {
 			if (readPref() === "system") {

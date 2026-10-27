@@ -68,6 +68,8 @@ const RETRY_DELAYS_MS = [300, 1000, 2000, 4000];
 const RETRY_MAX_MS = 5000;
 const STATS_EVERY_MS = 3000;
 const WEAK_RTT_MS = 600;
+/** TURN credentials last 2 h; fetch new ones after this on a reconnect. */
+const ICE_REFRESH_MS = 90 * 60 * 1000;
 /** How long to wait for the friend's sharp photo before using the video frame. */
 export const SHARP_PHOTO_WAIT_MS = 15_000;
 
@@ -115,6 +117,15 @@ export class RoomSession {
 	private mine = new Map<string, Blob>();
 	/** Their photo files we hold (video frame or sharp), to re-save with ours. */
 	private theirs = new Map<string, Blob>();
+	/** Keys whose `theirs` is their real camera photo. */
+	private sharpTheirs = new Set<string>();
+	/**
+	 * Our own shots not finished yet (timer set, or photo still encoding).
+	 * A friend's photo arriving for one of these waits for ours, so the
+	 * slot never flashes a grey half on a slow phone.
+	 */
+	private ownPending = new Set<string>();
+	private scheduled = new Map<string, ReturnType<typeof setTimeout>>();
 	private iceServers: RTCIceServer[] | null = null;
 	private localStream: MediaStream | null = null;
 	private profile = { name: "", micOn: true };
@@ -163,8 +174,6 @@ export class RoomSession {
 		window.addEventListener("online", this.retryNow);
 		document.addEventListener("visibilitychange", this.onVisible);
 		if (!this.photosLoaded) void this.loadPhotos();
-		// Fetch TURN credentials while the person sets up their camera.
-		if (!this.iceServers) void this.loadIceServers();
 		if (this.wanted) this.socket.connect();
 	}
 
@@ -262,6 +271,8 @@ export class RoomSession {
 					// A reload will join as a newcomer.
 				}
 				this.set({ status: "open", failure: null, selfId: msg.selfId, seat: msg.seat });
+				// Credentials last 2 h; refresh well before that on a reconnect.
+				if (!this.iceServers || Date.now() - this.iceFetchedAt > ICE_REFRESH_MS) void this.loadIceServers(msg.token);
 				this.applyRoom(msg.room);
 				// A few more samples for a better clock estimate.
 				for (const delay of [200, 600, 1200]) {
@@ -337,9 +348,17 @@ export class RoomSession {
 
 	/* ---------- peer connection ---------- */
 
-	private async loadIceServers(): Promise<void> {
+	/** When the current TURN credentials were fetched (they last 2 h). */
+	private iceFetchedAt = 0;
+
+	/**
+	 * TURN credentials, after joining: the Worker only gives them to
+	 * someone holding a seat. Signals arriving meanwhile are buffered.
+	 */
+	private async loadIceServers(token: string): Promise<void> {
+		this.iceFetchedAt = Date.now();
 		try {
-			const res = await fetchIceServers();
+			const res = await fetchIceServers(this.roomId, token);
 			this.iceServers = res.iceServers;
 			this.set({ debug: { ...this.state.debug, turn: res.turn } });
 		} catch {
@@ -449,7 +468,14 @@ export class RoomSession {
 			const wait = at - Date.now();
 			// Joined mid-capture: shots already behind us are skipped.
 			if (wait < -500) return;
-			this.shutterTimers.push(setTimeout(() => void this.shoot(c.id, slot), Math.max(0, wait)));
+			const key = photoKey(c.id, slot);
+			this.ownPending.add(key);
+			const timer = setTimeout(() => {
+				this.scheduled.delete(key);
+				void this.shoot(c.id, slot);
+			}, Math.max(0, wait));
+			this.scheduled.set(key, timer);
+			this.shutterTimers.push(timer);
 		});
 	}
 
@@ -457,18 +483,30 @@ export class RoomSession {
 		for (const t of this.shutterTimers) clearTimeout(t);
 		this.shutterTimers = [];
 		this.scheduledCapture = null;
+		// Shots that will never happen: stop waiting for them (in-flight ones finish on their own).
+		for (const key of this.scheduled.keys()) this.ownPending.delete(key);
+		this.scheduled.clear();
 	}
 
 	private async shoot(captureId: string, slot: number): Promise<void> {
-		if (!this.grabber) return;
+		const key = photoKey(captureId, slot);
+		if (!this.grabber) {
+			this.ownPending.delete(key);
+			return;
+		}
 		this.set({ flash: true });
 		setTimeout(() => this.set({ flash: false }), 150);
 		const { self, friend } = await this.grabber.grab();
-		if (!self) return; // camera not running: the slot shows as missing
-		const key = photoKey(captureId, slot);
+		this.ownPending.delete(key);
+		this.dlog(`shutter ${captureId.slice(0, 6)}:${slot} self=${!!self} friendFrame=${!!friend}`);
+		if (!self) {
+			// Our camera gave nothing: still show their photo if it came.
+			if (this.sharpTheirs.has(key)) this.putRecord(key, { mine: null, theirs: this.theirs.get(key) ?? null, sharp: true, gaveUp: false });
+			return;
+		}
 		this.mine.set(key, self);
-		// Their sharp photo may have beaten our own shutter by a few ms: keep it.
-		const sharp = this.state.photos.get(key)?.sharp ? (this.theirs.get(key) ?? null) : null;
+		// Their sharp photo may have arrived while ours was encoding: keep it.
+		const sharp = this.sharpTheirs.has(key) ? (this.theirs.get(key) ?? null) : null;
 		const theirs = sharp ?? friend;
 		if (theirs) this.theirs.set(key, theirs);
 		this.putRecord(key, { mine: self, theirs, sharp: !!sharp, gaveUp: false });
@@ -498,8 +536,11 @@ export class RoomSession {
 	/** The friend's own camera photo arrived. */
 	private receiveSharp(key: string, blob: Blob): void {
 		if (!this.isCurrent(key)) return;
-		const mine = this.mine.get(key) ?? null;
 		this.theirs.set(key, blob);
+		this.sharpTheirs.add(key);
+		// Ours is still being taken: shoot() will build the slot with both.
+		if (this.ownPending.has(key) && !this.state.photos.has(key)) return;
+		const mine = this.mine.get(key) ?? null;
 		this.putRecord(key, { mine, theirs: blob, sharp: true, gaveUp: false });
 		void savePhoto(this.roomId, key, { mine, theirs: blob, sharp: true });
 	}
@@ -535,6 +576,7 @@ export class RoomSession {
 			if (this.state.photos.has(p.key)) continue;
 			if (p.mine) this.mine.set(p.key, p.mine);
 			if (p.theirs) this.theirs.set(p.key, p.theirs);
+			if (p.sharp) this.sharpTheirs.add(p.key);
 			// After a reload we don't wait again; a sharp photo can still arrive.
 			this.putRecord(p.key, { mine: p.mine, theirs: p.theirs, sharp: p.sharp, gaveUp: !p.sharp });
 		}
@@ -556,6 +598,7 @@ export class RoomSession {
 			photos.delete(k);
 			this.mine.delete(k);
 			this.theirs.delete(k);
+			this.sharpTheirs.delete(k);
 		}
 		this.set({ photos });
 		void deletePhotos(this.roomId, drop);

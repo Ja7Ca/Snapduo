@@ -1,0 +1,47 @@
+# Runs on every pull request and every push to main. Same commands as
+# locally: if it's green here, it was green on your machine too.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to the same branch cancels the older run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm version comes from "packageManager" in package.json.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (web, worker, protocol)
+        run: pnpm typecheck
+
+      - name: Lint (web)
+        run: pnpm lint
+
+      # Includes the Worker tests, which run in the real Workers runtime (workerd).
+      - name: Unit and Worker tests
+        run: pnpm test
+
+      - name: Build web
+        run: pnpm build:web

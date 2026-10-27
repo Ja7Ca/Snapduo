@@ -29,7 +29,7 @@ export function resolveTheme(pref: ThemePref, systemDark: boolean): ResolvedThem
  * Plain ES5 so it runs as-is in <head>. Keep in sync with parsePref /
  * resolveTheme (theme.test.ts executes this string to check that).
  */
-export const THEME_INIT_SCRIPT = `(function(){var p="${DEFAULT_THEME}";try{var s=localStorage.getItem("${THEME_STORAGE_KEY}");if(s==="light"||s==="dark"||s==="system")p=s}catch(e){}var d=p==="dark"||(p==="system"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);var t=d?"dark":"light";var r=document.documentElement;r.setAttribute("data-theme",t);r.setAttribute("data-theme-pref",p);r.style.colorScheme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",d?"${THEME_COLORS.dark}":"${THEME_COLORS.light}")})()`;
+export const THEME_INIT_SCRIPT = `(function(){var p="${DEFAULT_THEME}";try{var s=localStorage.getItem("${THEME_STORAGE_KEY}");if(s==="light"||s==="dark"||s==="system")p=s}catch(e){}var d=p==="dark"||(p==="system"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);var t=d?"dark":"light";var r=document.documentElement;r.setAttribute("data-theme",t);r.setAttribute("data-theme-pref",p);r.setAttribute("data-theme-init","");r.style.colorScheme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",d?"${THEME_COLORS.dark}":"${THEME_COLORS.light}")})()`;
 
 /** Applies a theme at runtime (after the user picks one, or the OS changes). */
 export function applyTheme(pref: ThemePref): ResolvedTheme {

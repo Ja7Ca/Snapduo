@@ -30,8 +30,12 @@ export function signalConfigError(): string | null {
 	return null;
 }
 
-export async function fetchIceServers(): Promise<IceServersResponse> {
-	const res = await fetch(`${SIGNAL_URL}/turn-credentials`, { cache: "no-store" });
+/** TURN credentials are only given to someone sitting in the room. */
+export async function fetchIceServers(roomId: string, seatToken: string): Promise<IceServersResponse> {
+	const res = await fetch(`${SIGNAL_URL}/turn-credentials`, {
+		cache: "no-store",
+		headers: { "X-Room-Id": roomId, Authorization: `Bearer ${seatToken}` },
+	});
 	if (!res.ok) throw new Error(`TURN credentials failed: ${res.status}`);
 	return res.json();
 }
@@ -40,8 +44,16 @@ export async function createRoomRequest(): Promise<string> {
 	const configError = signalConfigError();
 	if (configError) throw new Error(configError);
 	const res = await fetch(`${SIGNAL_URL}/rooms`, { method: "POST", cache: "no-store" });
+	if (res.status === 429) throw new RateLimitedError();
 	if (!res.ok) throw new Error(`Create room failed: ${res.status}`);
 	return ((await res.json()) as CreateRoomResponse).roomId;
+}
+
+/** The Worker said "too many tries from you, wait a minute". */
+export class RateLimitedError extends Error {
+	constructor() {
+		super("Rate limited");
+	}
 }
 
 /** null when the server can't be reached (the socket will retry anyway). */
